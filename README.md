@@ -1,5 +1,5 @@
 <div style="text-align:center; with">
- <img src="site/public/assets/logo-1.png" />
+ <img src="site/public/assets/github-logo.png" />
 </div>
 
 <div align="center">
