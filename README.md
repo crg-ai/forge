@@ -16,14 +16,14 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
-<!-- 创建 GitHub 仓库后替换 YOUR-USERNAME 为你的 GitHub 用户名或组织名 -->
+<!-- 创建 GitHub 仓库后取消注释 -->
 <!--
-[![CI Status](https://img.shields.io/github/actions/workflow/status/YOUR-USERNAME/forge/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/YOUR-USERNAME/forge/actions/workflows/ci.yml)
-[![Coverage Status](https://img.shields.io/codecov/c/github/YOUR-USERNAME/forge?style=flat-square)](https://codecov.io/gh/YOUR-USERNAME/forge)
-[![GitHub stars](https://img.shields.io/github/stars/YOUR-USERNAME/forge?style=flat-square)](https://github.com/YOUR-USERNAME/forge/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/YOUR-USERNAME/forge?style=flat-square)](https://github.com/YOUR-USERNAME/forge/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/YOUR-USERNAME/forge?style=flat-square)](https://github.com/YOUR-USERNAME/forge/pulls)
-[![Contributors](https://img.shields.io/github/contributors/YOUR-USERNAME/forge?style=flat-square)](https://github.com/YOUR-USERNAME/forge/graphs/contributors)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/crg-ai/forge/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/crg-ai/forge/actions/workflows/ci.yml)
+[![Coverage Status](https://img.shields.io/codecov/c/github/crg-ai/forge?style=flat-square)](https://codecov.io/gh/crg-ai/forge)
+[![GitHub stars](https://img.shields.io/github/stars/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/pulls)
+[![Contributors](https://img.shields.io/github/contributors/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/graphs/contributors)
 -->
 
 [特性](#-特性) • [快速开始](#-快速开始) • [核心概念](#-核心概念) • [示例](#-示例) • [文档](#-文档) • [贡献](#-贡献)
@@ -143,7 +143,7 @@ class OrderRepository extends Repository<Order> {
 ## 📖 文档
 
 <!-- API 文档链接将在 GitHub Pages 配置后启用 -->
-<!-- - [API 文档](https://YOUR-USERNAME.github.io/forge) -->
+<!-- - [API 文档](https://crg-ai.github.io/forge) -->
 
 - [架构指南](./docs/architecture.md)
 - [最佳实践](./docs/best-practices.md)
@@ -157,7 +157,7 @@ class OrderRepository extends Repository<Order> {
 
 ```bash
 # 克隆项目
-git clone https://github.com/YOUR-USERNAME/forge.git
+git clone https://github.com/crg-ai/forge.git
 
 # 安装依赖
 npm install
@@ -180,9 +180,9 @@ npm run build
 
 感谢所有贡献者的努力！
 
-<!-- 创建 GitHub 仓库后启用，替换 YOUR-USERNAME 为你的 GitHub 用户名或组织名
-<a href="https://github.com/YOUR-USERNAME/forge/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=YOUR-USERNAME/forge" alt="Contributors" />
+<!-- 创建 GitHub 仓库后启用
+<a href="https://github.com/crg-ai/forge/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=crg-ai/forge" alt="Contributors" />
 </a>
 -->
 
