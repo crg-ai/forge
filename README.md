@@ -12,6 +12,7 @@
 [![npm version](https://img.shields.io/npm/v/@your-scope/forge.svg?style=flat-square)](https://www.npmjs.com/package/@your-scope/forge)
 [![npm downloads](https://img.shields.io/npm/dm/@your-scope/forge.svg?style=flat-square)](https://www.npmjs.com/package/@your-scope/forge)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/@your-scope/forge?style=flat-square)](https://bundlephobia.com/package/@your-scope/forge)
+[![package quality](https://packagequality.com/shield/@your-scope/forge.svg?style=flat-square)](https://packagequality.com/#?package=@your-scope/forge)
 -->
 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](./LICENSE)
@@ -21,7 +22,8 @@
 <!-- 创建 GitHub 仓库后取消注释 -->
 
 [![CI Status](https://img.shields.io/github/actions/workflow/status/crg-ai/forge/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/crg-ai/forge/actions/workflows/ci.yml)
-[![Coverage Status](https://img.shields.io/codecov/c/github/crg-ai/forge?style=flat-square)](https://codecov.io/gh/crg-ai/forge)
+[![codecov](https://codecov.io/gh/darukjs/daruk/branch/developer/graph/badge.svg)](https://codecov.io/gh/crg-ai/forge)
+
 [![GitHub stars](https://img.shields.io/github/stars/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/pulls)
