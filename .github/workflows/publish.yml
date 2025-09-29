@@ -2,18 +2,34 @@ name: Publish to npm
 
 on:
   release:
-    types: [created]
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version type (patch, minor, major)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # 只在创建 release 或手动触发时运行
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -22,10 +38,21 @@ jobs:
       - name: Run tests
         run: npm run test:run
 
-      - name: Build
-        run: npm run build
+      - name: Run type check
+        run: npm run typecheck
+
+      - name: Build production
+        run: npm run build:prod
+
+      - name: Version bump (manual trigger only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          npm version ${{ github.event.inputs.version }} -m "chore(release): %s [skip ci]"
+          git push --follow-tags
 
       - name: Publish to npm
-        run: npm publish
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
