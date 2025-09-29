@@ -68,8 +68,140 @@ NPM_TOKEN=npm_xxxxxxxxxxxxx  # 如果提交到 Git 就会泄露
    - Force push 到远程仓库
    - 通知所有协作者重新克隆仓库
 
+## 🔍 依赖安全
+
+### 自动化安全检查
+
+```bash
+# 检查已知漏洞
+npm audit
+
+# 自动修复漏洞
+npm audit fix
+
+# 强制修复（谨慎使用）
+npm audit fix --force
+```
+
+### 依赖管理最佳实践
+
+1. **定期更新依赖**
+
+   ```bash
+   # 查看过期包
+   npm outdated
+
+   # 更新依赖
+   npm update
+   ```
+
+2. **使用 lock 文件**
+   - 始终提交 `package-lock.json`
+   - CI/CD 中使用 `npm ci` 而非 `npm install`
+
+3. **最小化依赖**
+   - 仅安装必要的依赖
+   - 定期审查并移除未使用的包
+
+## 🔒 代码安全
+
+### 敏感信息处理
+
+1. **环境变量**
+
+   ```typescript
+   // ❌ 错误
+   const apiKey = 'sk-xxxxx'
+
+   // ✅ 正确
+   const apiKey = process.env.API_KEY
+   ```
+
+2. **配置文件**
+   - 使用 `.env.example` 提供模板
+   - 实际 `.env` 文件加入 `.gitignore`
+
+### 输入验证
+
+```typescript
+// 实体中的输入验证示例
+class Email extends ValueObject<{ value: string }> {
+  validate(): void {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(this.props.value)) {
+      throw new Error('Invalid email format')
+    }
+    // 防止注入攻击
+    if (this.props.value.includes('<script>')) {
+      throw new Error('Invalid email content')
+    }
+  }
+}
+```
+
+## 🐛 漏洞报告
+
+### 报告流程
+
+1. **请勿公开披露** - 不要在公开的 Issue 中报告安全漏洞
+2. **发送邮件** - 将漏洞详情发送至: <security@forge-ddd.com>
+3. **包含信息**：
+   - 漏洞描述
+   - 复现步骤
+   - 潜在影响
+   - 建议的修复方案（如有）
+
+### 响应时间
+
+- **确认收到**: 24 小时内
+- **初步评估**: 48 小时内
+- **修复计划**: 7 天内
+- **修复发布**: 基于严重程度，通常 30 天内
+
+## 🎯 安全开发实践
+
+### 开发阶段
+
+1. **代码审查**
+   - 所有 PR 必须经过审查
+   - 特别关注安全相关的更改
+
+2. **测试覆盖**
+   - 为安全相关功能编写测试
+   - 包含边界情况和异常输入
+
+3. **类型安全**
+
+   ```typescript
+   // 使用 TypeScript 严格模式
+   // tsconfig.json
+   {
+     "compilerOptions": {
+       "strict": true,
+       "noImplicitAny": true,
+       "strictNullChecks": true
+     }
+   }
+   ```
+
+### CI/CD 安全
+
+1. **最小权限原则**
+   - 为不同阶段使用不同的 token
+   - 限制 token 的作用域
+
+2. **安全扫描**
+
+   ```yaml
+   # GitHub Actions 示例
+   - name: Run security audit
+     run: npm audit --audit-level=moderate
+   ```
+
 ## 📚 更多资源
 
 - [GitHub Secrets 文档](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 - [npm Token 管理](https://docs.npmjs.com/creating-and-viewing-access-tokens)
 - [GitHub Actions 安全最佳实践](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [Node.js 安全最佳实践](https://nodejs.org/en/docs/guides/security/)

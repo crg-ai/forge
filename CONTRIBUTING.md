@@ -1,6 +1,6 @@
-# Contributing to Forge
+# 贡献指南
 
-感谢您对 Forge DDD Framework 的贡献兴趣！本文档将指导您如何为项目做出贡献。
+感谢您对 Forge DDD Framework 的关注！我们欢迎所有形式的贡献。
 
 ## 开发环境设置
 

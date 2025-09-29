@@ -227,6 +227,176 @@ forge/
 - 保持测试通过
 - 及时更新文档
 
+## 故障排查指南
+
+### 常见问题及解决方案
+
+#### 构建失败
+
+```bash
+# 清理缓存和重新安装
+npm run clean
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+```
+
+#### 测试失败
+
+```bash
+# 查看详细测试输出
+npm run test:run -- --reporter=verbose
+# 只运行失败的测试
+npm run test -- --run --failed
+# 检查测试覆盖率缺口
+npm run test:coverage
+```
+
+#### TypeScript 类型错误
+
+```bash
+# 检查类型错误详情
+npm run typecheck -- --listFilesOnly
+# 生成类型声明文件检查
+tsc --noEmit --declaration
+```
+
+#### Git Hooks 问题
+
+```bash
+# 重新安装 hooks
+npx husky install
+# 跳过 hooks (紧急情况)
+git commit --no-verify -m "emergency fix"
+```
+
+### 性能优化注意事项
+
+1. **包体积监控**
+   - 运行 `npm run size` 检查包大小
+   - 运行 `npm run analyze` 分析依赖
+   - 目标：压缩后 < 10KB
+
+2. **代码优化**
+   - 避免循环依赖
+   - 使用 Tree-shaking 友好的导出
+   - 延迟加载非核心功能
+
+3. **测试性能**
+   - 单个测试文件执行时间 < 100ms
+   - 总测试时间 < 5s
+   - 使用 `vitest bench` 进行性能测试
+
+### 安全最佳实践
+
+1. **依赖管理**
+
+   ```bash
+   # 检查安全漏洞
+   npm audit
+   # 自动修复
+   npm audit fix
+   # 检查过期依赖
+   npm outdated
+   ```
+
+2. **代码安全**
+   - 不要硬编码敏感信息
+   - 使用环境变量管理配置
+   - 定期更新依赖版本
+
+3. **提交安全**
+   - 不提交 .env 文件
+   - 使用 .gitignore 排除敏感文件
+   - Review 代码变更避免意外泄露
+
+## 错误处理模式
+
+### 领域层错误
+
+```typescript
+// 使用自定义领域异常
+class DomainException extends Error {
+  constructor(
+    message: string,
+    public readonly code: string
+  ) {
+    super(message)
+  }
+}
+
+// 在实体中使用
+class User extends Entity {
+  changeEmail(email: string) {
+    if (!email.includes('@')) {
+      throw new DomainException('Invalid email', 'INVALID_EMAIL')
+    }
+  }
+}
+```
+
+### 应用层错误
+
+```typescript
+// 使用 Result 模式
+type Result<T, E = Error> = { success: true; value: T } | { success: false; error: E }
+
+// 服务中使用
+class UserService {
+  async createUser(data: CreateUserDto): Promise<Result<User>> {
+    try {
+      const user = User.create(data)
+      return { success: true, value: user }
+    } catch (error) {
+      return { success: false, error }
+    }
+  }
+}
+```
+
+## 测试策略
+
+### 单元测试
+
+- 覆盖所有公共 API
+- 测试边界条件
+- Mock 外部依赖
+
+### 集成测试
+
+- 测试模块间交互
+- 验证事件流
+- 测试仓储实现
+
+### 性能测试
+
+```bash
+# 运行基准测试
+npm run bench
+# 生成性能报告
+npm run bench -- --reporter=html
+```
+
+## 调试技巧
+
+### VS Code 调试
+
+1. 使用断点调试测试
+2. 配置 launch.json (见 .vscode/launch.json)
+3. 使用条件断点
+
+### 日志调试
+
+```typescript
+// 使用 console.trace 追踪调用栈
+console.trace('Entity created:', entity)
+
+// 使用 console.time 测量性能
+console.time('repository-save')
+await repository.save(entity)
+console.timeEnd('repository-save')
+```
+
 ## 联系方式
 
 - GitHub Issues: <https://github.com/crg-ai/forge/issues>
