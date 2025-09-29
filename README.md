@@ -19,14 +19,13 @@
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
 <!-- 创建 GitHub 仓库后取消注释 -->
-<!--
+
 [![CI Status](https://img.shields.io/github/actions/workflow/status/crg-ai/forge/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/crg-ai/forge/actions/workflows/ci.yml)
 [![Coverage Status](https://img.shields.io/codecov/c/github/crg-ai/forge?style=flat-square)](https://codecov.io/gh/crg-ai/forge)
 [![GitHub stars](https://img.shields.io/github/stars/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/pulls)
 [![Contributors](https://img.shields.io/github/contributors/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/graphs/contributors)
--->
 
 [特性](#-特性) • [快速开始](#-快速开始) • [核心概念](#-核心概念) • [示例](#-示例) • [文档](#-文档) • [贡献](#-贡献)
 
