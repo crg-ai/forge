@@ -53,6 +53,9 @@ jobs:
           git push --follow-tags
 
       - name: Publish to npm
+        # 使用 GitHub Secrets 中配置的 NPM_TOKEN
+        # 永远不要在这里硬编码 token！
+        # 配置方法见 .github/workflows/README.md
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

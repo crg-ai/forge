@@ -76,9 +76,41 @@
 4. 选择版本类型（patch/minor/major）
 5. 自动更新版本号并发布
 
-## 注意事项
+## 配置 NPM_TOKEN
+
+`NPM_TOKEN` 是用于发布包到 npm 的认证令牌，必须安全地存储在 GitHub Secrets 中。
+
+### 获取 NPM Token
+
+1. 登录 [npmjs.com](https://www.npmjs.com/)
+2. 点击右上角头像 → **Access Tokens**
+3. 点击 **Generate New Token** → **Classic Token**
+4. 选择类型：
+   - **Automation** - 推荐用于 CI/CD
+   - 或 **Publish** - 仅发布权限
+5. 复制生成的 token
+
+### 配置 GitHub Secrets
+
+1. 进入 GitHub 仓库页面
+2. 点击 **Settings** → **Secrets and variables** → **Actions**
+3. 点击 **New repository secret**
+4. 添加 secret：
+   - **Name**: `NPM_TOKEN`
+   - **Value**: 粘贴你的 npm token
+5. 点击 **Add secret**
+
+### 安全注意事项
+
+- ⚠️ **永远不要**将 token 直接写在代码或工作流文件中
+- ⚠️ **永远不要**将 token 提交到版本控制
+- ✅ 只通过 GitHub Secrets 使用 token
+- ✅ 定期轮换 token
+- ✅ 使用最小权限原则（Automation token 而非 Admin token）
+
+## 其他注意事项
 
 1. 推送到 `main` 分支**不会**自动发布到 npm
 2. 只有创建 Release 或手动触发才会发布
-3. 确保在仓库设置中配置了 `NPM_TOKEN` secret
-4. 使用 `[skip ci]` 在提交消息中可跳过 CI
+3. 使用 `[skip ci]` 在提交消息中可跳过 CI
+4. 发布失败时检查 Actions 日志和 NPM_TOKEN 是否正确配置
