@@ -1,0 +1,20 @@
+{
+  "types": [
+    {"type": "feat", "section": "✨ Features"},
+    {"type": "fix", "section": "🐛 Bug Fixes"},
+    {"type": "chore", "hidden": true},
+    {"type": "docs", "section": "📚 Documentation"},
+    {"type": "style", "section": "💅 Styling"},
+    {"type": "refactor", "section": "♻️ Code Refactoring"},
+    {"type": "perf", "section": "⚡ Performance Improvements"},
+    {"type": "test", "hidden": true}
+  ],
+  "commitUrlFormat": "https://github.com/crg-ai/forge/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/crg-ai/forge/compare/{{previousTag}}...{{currentTag}}",
+  "skip": {
+    "bump": false,
+    "changelog": false,
+    "commit": true,
+    "tag": false
+  }
+}

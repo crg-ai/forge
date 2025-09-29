@@ -1,0 +1,118 @@
+{
+  "name": "forge",
+  "version": "0.1.0",
+  "description": "轻量级、类型安全的前端领域驱动设计(DDD)框架",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "build:prod": "npm run clean && tsup --minify",
+    "preview": "npm run build && node -e \"console.log(require('./dist/index.js'))\"",
+    "clean": "rm -rf dist coverage .turbo *.tsbuildinfo",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:md": "markdownlint-cli2 '**/*.md'",
+    "lint:md:fix": "markdownlint-cli2 '**/*.md' --fix",
+    "lint:all": "npm run lint && npm run lint:md && npm run typecheck",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:all": "npm run format && npm run lint:md:fix",
+    "docs": "typedoc",
+    "docs:serve": "npm run docs && npx serve docs",
+    "analyze": "npm run build && npx source-map-explorer dist/**/*.js",
+    "size": "npm run build && npx size-limit",
+    "check-exports": "npx attw --pack .",
+    "prepublishOnly": "npm run lint:all && npm run test:coverage && npm run build:prod",
+    "commit": "cz",
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:patch": "standard-version --release-as patch",
+    "release:major": "standard-version --release-as major",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "ddd",
+    "domain-driven-design",
+    "frontend",
+    "typescript",
+    "framework",
+    "architecture"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crg-ai/forge.git"
+  },
+  "homepage": "https://github.com/crg-ai/forge#readme",
+  "bugs": {
+    "url": "https://github.com/crg-ai/forge/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@eslint/js": "^9.36.0",
+    "@size-limit/file": "^11.2.0",
+    "@size-limit/preset-small-lib": "^11.2.0",
+    "@types/node": "^24.5.2",
+    "@typescript-eslint/eslint-plugin": "^8.44.1",
+    "@typescript-eslint/parser": "^8.44.1",
+    "@vitest/ui": "^3.2.4",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.1",
+    "markdownlint": "^0.38.0",
+    "markdownlint-cli2": "^0.18.1",
+    "prettier": "^3.6.2",
+    "source-map-explorer": "^2.5.3",
+    "standard-version": "^9.5.0",
+    "tsup": "^8.5.0",
+    "typedoc": "^0.28.13",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.5.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.md": [
+      "markdownlint-cli2 --fix",
+      "prettier --write"
+    ],
+    "*.{json,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

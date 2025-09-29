@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Main Bundle",
+    "path": "dist/index.js",
+    "limit": "10 KB"
+  },
+  {
+    "name": "ESM Bundle",
+    "path": "dist/index.mjs",
+    "limit": "10 KB"
+  }
+]

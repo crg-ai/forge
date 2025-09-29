@@ -1,0 +1,26 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./src/index.ts"],
+  "out": "./docs",
+  "name": "Forge - DDD Framework",
+  "navigationLinks": {
+    "GitHub": "https://github.com/crg-ai/forge"
+  },
+  "includeVersion": true,
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"],
+  "theme": "default",
+  "readme": "./README.md",
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "excludeExternals": false,
+  "skipErrorChecking": false,
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  },
+  "plugin": [],
+  "hideGenerator": false,
+  "searchInComments": true
+}
