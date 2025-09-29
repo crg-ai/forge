@@ -1,4 +1,6 @@
-# Forge
+<div style="text-align:center">
+ <img src="site/public/assets/logo.png" />
+</div>
 
 <div align="center">
 
