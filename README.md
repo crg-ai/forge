@@ -6,20 +6,25 @@
 
 帮助您在前端应用中优雅地实践 DDD 模式
 
-[![npm version](https://img.shields.io/npm/v/forge.svg?style=flat-square)](https://www.npmjs.com/package/forge)
-[![npm downloads](https://img.shields.io/npm/dm/forge.svg?style=flat-square)](https://www.npmjs.com/package/forge)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/forge?style=flat-square)](https://bundlephobia.com/package/forge)
-[![license](https://img.shields.io/github/license/crg-ai/forge.svg?style=flat-square)](https://github.com/crg-ai/forge/blob/main/LICENSE)
+<!-- 等待 NPM 包发布后启用
+[![npm version](https://img.shields.io/npm/v/@your-scope/forge.svg?style=flat-square)](https://www.npmjs.com/package/@your-scope/forge)
+[![npm downloads](https://img.shields.io/npm/dm/@your-scope/forge.svg?style=flat-square)](https://www.npmjs.com/package/@your-scope/forge)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@your-scope/forge?style=flat-square)](https://bundlephobia.com/package/@your-scope/forge)
+-->
 
-[![CI Status](https://img.shields.io/github/actions/workflow/status/crg-ai/forge/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/crg-ai/forge/actions/workflows/ci.yml)
-[![Coverage Status](https://img.shields.io/codecov/c/github/crg-ai/forge?style=flat-square)](https://codecov.io/gh/crg-ai/forge)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
-[![GitHub stars](https://img.shields.io/github/stars/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/pulls)
-[![Contributors](https://img.shields.io/github/contributors/crg-ai/forge?style=flat-square)](https://github.com/crg-ai/forge/graphs/contributors)
+<!-- 创建 GitHub 仓库后替换 YOUR-USERNAME 为你的 GitHub 用户名或组织名 -->
+<!--
+[![CI Status](https://img.shields.io/github/actions/workflow/status/YOUR-USERNAME/forge/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/YOUR-USERNAME/forge/actions/workflows/ci.yml)
+[![Coverage Status](https://img.shields.io/codecov/c/github/YOUR-USERNAME/forge?style=flat-square)](https://codecov.io/gh/YOUR-USERNAME/forge)
+[![GitHub stars](https://img.shields.io/github/stars/YOUR-USERNAME/forge?style=flat-square)](https://github.com/YOUR-USERNAME/forge/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/YOUR-USERNAME/forge?style=flat-square)](https://github.com/YOUR-USERNAME/forge/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/YOUR-USERNAME/forge?style=flat-square)](https://github.com/YOUR-USERNAME/forge/pulls)
+[![Contributors](https://img.shields.io/github/contributors/YOUR-USERNAME/forge?style=flat-square)](https://github.com/YOUR-USERNAME/forge/graphs/contributors)
+-->
 
 [特性](#-特性) • [快速开始](#-快速开始) • [核心概念](#-核心概念) • [示例](#-示例) • [文档](#-文档) • [贡献](#-贡献)
 
@@ -137,7 +142,9 @@ class OrderRepository extends Repository<Order> {
 
 ## 📖 文档
 
-- [API 文档](https://crg-ai.github.io/forge)
+<!-- API 文档链接将在 GitHub Pages 配置后启用 -->
+<!-- - [API 文档](https://YOUR-USERNAME.github.io/forge) -->
+
 - [架构指南](./docs/architecture.md)
 - [最佳实践](./docs/best-practices.md)
 - [迁移指南](./docs/migration.md)
@@ -150,7 +157,7 @@ class OrderRepository extends Repository<Order> {
 
 ```bash
 # 克隆项目
-git clone https://github.com/crg-ai/forge.git
+git clone https://github.com/YOUR-USERNAME/forge.git
 
 # 安装依赖
 npm install
@@ -167,15 +174,17 @@ npm run build
 
 ## 📄 许可证
 
-[MIT](LICENSE) © crg-ai
+[MIT](LICENSE) © 2025 Forge Contributors
 
 ## 🙏 致谢
 
 感谢所有贡献者的努力！
 
-<a href="https://github.com/crg-ai/forge/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=crg-ai/forge" alt="Contributors" />
+<!-- 创建 GitHub 仓库后启用，替换 YOUR-USERNAME 为你的 GitHub 用户名或组织名
+<a href="https://github.com/YOUR-USERNAME/forge/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=YOUR-USERNAME/forge" alt="Contributors" />
 </a>
+-->
 
 ---
 
