@@ -471,5 +471,34 @@ describe('深度相等比较', () => {
       // Act & Assert
       expect(deepEquals(obj1, obj2)).toBe(true)
     })
+
+    it('应该检测对象键不匹配', () => {
+      // 测试第二个对象缺少第一个对象的键的情况
+      const obj1 = { a: 1, b: 2, c: 3 }
+      const obj2 = { a: 1, b: 2 }
+
+      expect(deepEquals(obj1, obj2)).toBe(false)
+    })
+
+    it('应该检测复杂对象键不匹配', () => {
+      // 测试嵌套对象中键不匹配的情况
+      const obj1 = {
+        a: 1,
+        nested: {
+          x: 10,
+          y: 20,
+          z: 30
+        }
+      }
+      const obj2 = {
+        a: 1,
+        nested: {
+          x: 10,
+          y: 20
+        }
+      }
+
+      expect(deepEquals(obj1, obj2)).toBe(false)
+    })
   })
 })

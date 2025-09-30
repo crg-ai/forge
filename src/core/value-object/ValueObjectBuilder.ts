@@ -174,7 +174,7 @@ export abstract class ValueObjectBuilder<
       const valueObject = this.createValueObject()
       return Result.ok(valueObject)
     } catch (error) {
-      return Result.fail([(error as Error).message])
+      return Result.fail([(error as Error).message || 'Unknown error'])
     }
   }
 

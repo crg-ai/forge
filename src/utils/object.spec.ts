@@ -366,6 +366,30 @@ describe('对象工具函数', () => {
         expect(() => merge(obj1, obj2)).not.toThrow()
       })
 
+      it('应该正确处理同一对象的多个引用', () => {
+        // Arrange
+        const shared = { value: 'shared' }
+        const obj1: any = { a: 1 }
+        // 创建循环引用
+        obj1.self = obj1
+        obj1.shared = shared
+
+        const obj2: any = { b: 2 }
+        obj2.shared = shared
+
+        // Act
+        const result = merge(obj1, obj2)
+
+        // Assert
+        expect(result).toBeDefined()
+        expect(result.a).toBe(1)
+        expect(result.b).toBe(2)
+        // 验证对象合并成功
+        expect(result.shared).toEqual(shared)
+        // 验证循环引用被正确处理（虽然会断开循环引用）
+        expect(result.self).toBeDefined()
+      })
+
       it('应该处理大型对象', () => {
         // Arrange
         const obj1: Record<string, any> = {}

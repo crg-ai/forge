@@ -437,4 +437,42 @@ describe('通用值对象构建器', () => {
     expect(result.isFailure).toBe(true)
     expect(result.error).toContain('Invalid zip code')
   })
+
+  it('应该处理构造函数抛出的非标准错误', () => {
+    // 创建一个会抛出非标准错误的工厂函数
+    const factory = (_props: { value: string }) => {
+      // 抛出一个Error对象
+      throw new Error('CUSTOM_ERROR')
+    }
+
+    const builder = new GenericValueObjectBuilder(
+      factory,
+      () => [] // 空验证器
+    )
+
+    const result = builder.set('value', 'test').build()
+
+    expect(result.isFailure).toBe(true)
+    expect(result.error).toEqual(['CUSTOM_ERROR'])
+  })
+
+  it('应该处理构造函数抛出的未知错误', () => {
+    // 创建一个会抛出没有message的Error的工厂函数
+    const factory = (_props: { value: string }) => {
+      const error = new Error()
+
+      delete (error as any).message
+      throw error
+    }
+
+    const builder = new GenericValueObjectBuilder(
+      factory,
+      () => [] // 空验证器
+    )
+
+    const result = builder.set('value', 'test').build()
+
+    expect(result.isFailure).toBe(true)
+    expect(result.error).toEqual(['Unknown error'])
+  })
 })

@@ -351,6 +351,21 @@ describe('值对象', () => {
       expect(address.toString()).toBe('123 Main St, New York, USA 12345')
     })
 
+    it('should use default toString implementation when not overridden', () => {
+      // 创建一个没有重写 toString 的值对象
+      class SimpleValueObject extends ValueObject<{ value: string }> {
+        protected validate(): void {
+          // No validation
+        }
+      }
+
+      const simple = new SimpleValueObject({ value: 'test' })
+      const result = simple.toString()
+
+      // 默认实现应该返回 JSON 字符串
+      expect(result).toBe('{"value":"test"}')
+    })
+
     it('should generate hash code', () => {
       const email1 = Email.create('test@example.com').value
       const email2 = Email.create('test@example.com').value
@@ -494,6 +509,108 @@ describe('值对象', () => {
       expect(emails[1].isFailure).toBe(true)
       expect(emails[1].error).toBe('Invalid email format')
       expect(emails[2].isSuccess).toBe(true)
+    })
+
+    it('should use fromObject static method successfully', () => {
+      const result = Email.fromObject({ value: 'test@example.com' })
+      expect(result.isSuccess).toBe(true)
+      if (result.isSuccess) {
+        expect(result.value.value).toBe('test@example.com')
+      }
+    })
+
+    it('should handle fromObject with invalid data', () => {
+      const result = Email.fromObject({ value: '' })
+      expect(result.isFailure).toBe(true)
+      if (result.isFailure) {
+        expect(result.error).toContain('Email cannot be empty')
+      }
+    })
+
+    it('should handle fromObject with error', () => {
+      // 测试错误处理
+      class TestValueObject extends ValueObject<{ value: string }> {
+        protected validate(): void {
+          throw new Error('INVALID')
+        }
+      }
+
+      const result = TestValueObject.fromObject({ value: 'test' })
+      expect(result.isFailure).toBe(true)
+      if (result.isFailure) {
+        expect(result.error).toBe('INVALID')
+      }
+    })
+
+    it('should use createMany static method successfully', () => {
+      const result = Email.createMany([
+        { value: 'test1@example.com' },
+        { value: 'test2@example.com' },
+        { value: 'test3@example.com' }
+      ])
+
+      expect(result.isSuccess).toBe(true)
+      if (result.isSuccess) {
+        expect(result.value).toHaveLength(3)
+        expect(result.value[0].value).toBe('test1@example.com')
+        expect(result.value[1].value).toBe('test2@example.com')
+        expect(result.value[2].value).toBe('test3@example.com')
+      }
+    })
+
+    it('should fail createMany if any item is invalid', () => {
+      const result = Email.createMany([
+        { value: 'test1@example.com' },
+        { value: '' }, // 无效的邮箱
+        { value: 'test3@example.com' }
+      ])
+
+      expect(result.isFailure).toBe(true)
+      if (result.isFailure) {
+        expect(result.error).toContain('Item 1:')
+        expect(result.error).toContain('Email cannot be empty')
+      }
+    })
+
+    it('should fail createMany with multiple invalid items', () => {
+      const result = Email.createMany([
+        { value: 'test1@example.com' },
+        { value: '' }, // 无效的邮箱
+        { value: 'invalid' }, // 无效格式
+        { value: 'test4@example.com' }
+      ])
+
+      expect(result.isFailure).toBe(true)
+      if (result.isFailure) {
+        expect(result.error).toContain('Item 1:')
+        expect(result.error).toContain('Item 2:')
+        expect(result.error).toContain('Email cannot be empty')
+        expect(result.error).toContain('Invalid email format')
+      }
+    })
+
+    it('should test equals with deepEquals branch', () => {
+      const email1 = Email.create('test@example.com').value
+      const email2 = Email.create('test@example.com').value
+
+      // 测试深度相等
+      expect(email1.equals(email2)).toBe(true)
+
+      // 创建复合值对象测试深度相等
+      const address1 = new Address({
+        street: '123 Main St',
+        city: 'Boston',
+        country: 'USA',
+        zipCode: '02101' // 使用 zipCode 而不是 postalCode
+      })
+      const address2 = new Address({
+        street: '123 Main St',
+        city: 'Boston',
+        country: 'USA',
+        zipCode: '02101' // 使用 zipCode 而不是 postalCode
+      })
+
+      expect(address1.equals(address2)).toBe(true)
     })
   })
 })

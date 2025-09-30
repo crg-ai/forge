@@ -198,6 +198,18 @@ describe('结果类型', () => {
       expect(result.isFailure).toBe(true)
       expect(result.error).toBe('Async error')
     })
+
+    it('should not chain async when already failed', async () => {
+      const asyncOperation = async (n: number): Promise<Result<number, string>> => {
+        await Promise.resolve()
+        return Result.ok(n * 2)
+      }
+
+      const result = await Result.fail<number, string>('initial error').chainAsync(asyncOperation)
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error).toBe('initial error')
+    })
   })
 
   describe('模式匹配', () => {
@@ -542,6 +554,36 @@ describe('结果类型', () => {
         expect(result.isFailure).toBe(true)
         expect(result.error).toBe('async error')
       })
+    })
+  })
+
+  describe('chain (flatMap)', () => {
+    it('应该成功链式调用', () => {
+      const result = Result.ok(5)
+        .chain(value => Result.ok(value * 2))
+        .chain(value => Result.ok(value + 1))
+
+      expect(result.isSuccess).toBe(true)
+      expect(result.value).toBe(11)
+    })
+
+    it('应该在失败时返回失败结果', () => {
+      const result = Result.fail<number, string>('initial error').chain(value =>
+        Result.ok(value * 2)
+      )
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error).toBe('initial error')
+    })
+
+    it('应该在链中处理错误', () => {
+      const result = Result.ok(5)
+        .chain(value => Result.ok(value * 2))
+        .chain(() => Result.fail<number, string>('processing error'))
+        .chain(value => Result.ok((value as number) + 1))
+
+      expect(result.isFailure).toBe(true)
+      expect(result.error).toBe('processing error')
     })
   })
 })
