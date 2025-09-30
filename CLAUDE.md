@@ -49,33 +49,33 @@ npm run size             # 检查包大小
 npm run check-exports    # 检查导出正确性
 ```
 
-## 代码规范
+## 开发规范
 
-### 格式化和检查
+详细的开发规范文档位于 `.claude/rules/` 目录，包含完整的实现标准和代码示例：
+
+- **[code-style.md](.claude/rules/code-style.md)** - 代码风格和命名规范（文件命名、导入导出、注释规范）
+- **[ddd-patterns.md](.claude/rules/ddd-patterns.md)** - DDD 模式实现标准（Entity、ValueObject、AggregateRoot 等）
+- **[file-organization.md](.claude/rules/file-organization.md)** - 文件组织方式（目录结构、测试文件位置）
+- **[typescript.md](.claude/rules/typescript.md)** - TypeScript 编码规范（类型定义、泛型、访问修饰符）
+- **[testing.md](.claude/rules/testing.md)** - 测试编写规范（测试结构、覆盖率、Mock 使用）
+
+### 快速参考
+
+**格式化和检查工具：**
 
 - **Prettier**: 自动格式化，配置见 `.prettierrc`
 - **ESLint**: 代码质量检查，使用 TypeScript 规则
 - **Markdownlint**: Markdown 文件规范检查
 - **CommitLint**: Git 提交信息规范（conventional commits）
 
-### 提交规范
+**提交类型：**
 
-使用 conventional commits 规范：
+- `feat`: 新功能 | `fix`: 修复 bug | `docs`: 文档更新
+- `refactor`: 重构 | `test`: 测试相关 | `chore`: 构建工具变动
 
-- `feat`: 新功能
-- `fix`: 修复 bug
-- `docs`: 文档更新
-- `style`: 代码格式（不影响功能）
-- `refactor`: 重构
-- `test`: 测试相关
-- `chore`: 构建工具或辅助工具变动
+**测试要求：**
 
-### 测试要求
-
-- 目标覆盖率: 100%
-- 所有公共 API 必须有单元测试
-- 复杂逻辑需要集成测试
-- 使用 Vitest 作为测试框架
+- 目标覆盖率: 100% | 所有公共 API 必须有单元测试 | 使用 Vitest 框架
 
 ## 项目结构
 
@@ -111,30 +111,41 @@ forge/
 
 ## 开发工作流
 
-### 1. 功能开发流程
+### 标准开发流程
 
-1. 创建功能分支
-2. 编写测试用例（TDD）
-3. 实现功能代码
-4. 运行测试确保通过
-5. 运行 lint 和 typecheck
-6. 提交代码（使用 `npm run commit`）
+1. **阅读规范** - 查看 `.claude/rules/` 中相关规范文档
+2. **编写测试** - TDD 方式，先写测试用例（参考 [testing.md](.claude/rules/testing.md)）
+3. **实现功能** - 遵循规范实现代码（参考对应的 DDD 模式文档）
+4. **运行验证** - `npm run test` 和 `npm run lint:all`
+5. **提交代码** - 使用 `npm run commit` 规范化提交
 
-### 2. 代码审查要点
+### 使用 Agent 开发
 
-- 类型安全性
-- 测试覆盖率
-- DDD 原则遵循
-- 性能考虑
-- 文档完整性
+**方式 1：使用 DDD 专家 Agent**
 
-### 3. 发布流程
+```bash
+@ddd-frontend-expert 实现 Entity 基类，参考 .claude/rules/ddd-patterns.md
+```
 
-1. 确保所有测试通过
-2. 更新 CHANGELOG
-3. 运行 `npm run release`
-4. 推送标签到远程
-5. 发布到 NPM（准备就绪后）
+**方式 2：明确指定规范文档**
+
+```bash
+实现 ValueObject 基类
+
+请阅读以下规范：
+- .claude/rules/ddd-patterns.md (ValueObject 部分)
+- .claude/rules/code-style.md
+- .claude/rules/typescript.md
+- .claude/rules/testing.md
+```
+
+### 代码审查要点
+
+- 类型安全性 | 测试覆盖率 | DDD 原则遵循 | 性能考虑 | 文档完整性
+
+### 发布流程
+
+1. 测试通过 → 2. 更新 CHANGELOG → 3. `npm run release` → 4. 推送标签 → 5. 发布 NPM
 
 ## 技术栈
 
@@ -169,63 +180,17 @@ forge/
 3. 提交前使用 `npm run test:coverage` 确保覆盖率
 4. 使用 `npm run analyze` 检查包大小
 
-## DDD 特定指南
+## DDD 核心概念（快速参考）
 
-### 实体（Entity）
+详细实现标准请查看 **[.claude/rules/ddd-patterns.md](.claude/rules/ddd-patterns.md)**
 
-- 必须有唯一标识符
-- 生命周期内身份不变
-- 包含业务逻辑
-
-### 值对象（Value Object）
-
-- 不可变性
-- 通过值判断相等性
-- 可以包含验证逻辑
-
-### 聚合根（Aggregate Root）
-
-- 事务边界
-- 保证一致性
-- 对外暴露操作接口
-
-### 仓储（Repository）
-
-- 抽象持久化细节
-- 提供查询接口
-- 保持领域层纯净
-
-### 领域事件（Domain Event）
-
-- 记录业务发生的事实
-- 用于解耦聚合
-- 支持事件溯源
-
-## 与 Claude 协作建议
-
-### 探索代码
-
-- 使用 Grep 搜索关键实现
-- 使用 Glob 查找特定文件
-- 阅读测试了解使用方式
-
-### 编写代码
-
-- 先看现有代码风格
-- 保持一致的命名规范
-- 遵循 DDD 设计原则
-
-### 测试驱动
-
-- 先写测试，后写实现
-- 关注边界条件
-- 保证测试独立性
-
-### 重构优化
-
-- 小步迭代
-- 保持测试通过
-- 及时更新文档
+| 模式              | 关键特性               | 详细文档                                                     |
+| ----------------- | ---------------------- | ------------------------------------------------------------ |
+| **Entity**        | 唯一标识符、身份一致性 | [查看详情](.claude/rules/ddd-patterns.md#entity-模式)        |
+| **ValueObject**   | 不可变性、值相等       | [查看详情](.claude/rules/ddd-patterns.md#valueobject-模式)   |
+| **AggregateRoot** | 事务边界、领域事件     | [查看详情](.claude/rules/ddd-patterns.md#aggregateroot-模式) |
+| **Repository**    | 抽象持久化、集合语义   | [查看详情](.claude/rules/ddd-patterns.md#repository-模式)    |
+| **DomainEvent**   | 记录事实、解耦聚合     | [查看详情](.claude/rules/ddd-patterns.md#domainevent-模式)   |
 
 ## 专用 Agent 使用
 
