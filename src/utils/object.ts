@@ -83,7 +83,9 @@ function mergeInternal<T extends Record<string, unknown>>(
  * // { a: 1, b: { c: 2, d: 3 }, e: 4 }
  * ```
  */
-export function merge<T extends Record<string, unknown>>(...sources: Partial<T>[]): T {
+export function merge<T extends Record<string, unknown> = Record<string, unknown>>(
+  ...sources: Partial<T>[]
+): T {
   return mergeInternal(sources, new WeakMap())
 }
 
