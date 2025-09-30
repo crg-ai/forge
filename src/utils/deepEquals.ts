@@ -1,15 +1,50 @@
 /**
  * 深度比较两个值是否相等
  *
- * @param a 第一个值
- * @param b 第二个值
+ * 实现细节：
+ * - 递归比较所有嵌套属性
+ * - 使用 WeakSet 避免循环引用死循环
+ * - 支持 Date、RegExp、Map、Set、Array、Object
+ * - 引用相同（===）直接返回 true（性能优化）
+ *
+ * 边界条件处理：
+ * - NaN === NaN 返回 true（与 JavaScript === 行为不同）
+ * - 无效日期（Invalid Date）相等性判断：两个无效日期视为相等
+ * - null 和 undefined 只与自身相等
+ * - 数组长度不同直接返回 false
+ * - 对象键数量不同直接返回 false
+ *
+ * 性能提示：
+ * - 复杂度 O(n)，n 为所有节点数
+ * - 循环引用检测有额外内存开销
+ * - 适用于中小型对象（< 10000 节点）
+ *
+ * @param a - 第一个值
+ * @param b - 第二个值
  * @returns 如果相等返回 true，否则返回 false
  *
- * @example
+ * @example 基本使用
  * ```typescript
- * deepEquals({ a: { b: 1 } }, { a: { b: 1 } }) // true
- * deepEquals([1, 2, 3], [1, 2, 3]) // true
+ * deepEquals({ a: { b: 1 } }, { a: { b: 1 } })  // true
+ * deepEquals([1, 2, 3], [1, 2, 3])              // true
  * deepEquals(new Date(2024, 0, 1), new Date(2024, 0, 1)) // true
+ * ```
+ *
+ * @example 特殊值处理
+ * ```typescript
+ * deepEquals(NaN, NaN)                          // true（注意：NaN === NaN 是 false）
+ * deepEquals(new Date('invalid'), new Date('invalid')) // true（无效日期相等）
+ * deepEquals(null, undefined)                   // false
+ * deepEquals({ a: 1 }, { a: 1, b: undefined })  // false（键数量不同）
+ * ```
+ *
+ * @example 循环引用
+ * ```typescript
+ * const obj1: any = { name: 'test' }
+ * obj1.self = obj1
+ * const obj2: any = { name: 'test' }
+ * obj2.self = obj2
+ * deepEquals(obj1, obj2) // false（检测到循环引用，避免死循环）
  * ```
  */
 export function deepEquals(a: unknown, b: unknown): boolean {

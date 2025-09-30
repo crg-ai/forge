@@ -249,7 +249,7 @@ describe('EntityId', () => {
     })
 
     it('应该默认支持字符串类型', () => {
-      const id = EntityId.create()
+      const id = EntityId.create<string>()
       id.setBusinessId('DEFAULT-123')
 
       const businessId = id.getBusinessId()

@@ -6,11 +6,42 @@ import type { ValueObject } from './ValueObject'
  *
  * 提供流式 API 来构建复杂的值对象，特别适合有多个属性的值对象
  *
+ * 适用场景：
+ * - 值对象有 3 个以上属性
+ * - 需要复杂的验证逻辑
+ * - 需要条件性构建（when、apply）
+ * - 需要表单绑定场景
+ *
  * @template T 值对象类型
  * @template Props 值对象属性类型
  *
- * @example
+ * @example 完整的地址 Builder
  * ```typescript
+ * // 1. 定义属性接口
+ * interface AddressProps {
+ *   street: string
+ *   city: string
+ *   state: string
+ *   zipCode: string
+ *   country?: string
+ * }
+ *
+ * // 2. 定义值对象
+ * class Address extends ValueObject<AddressProps> {
+ *   get street() { return this.props.street }
+ *   get city() { return this.props.city }
+ *   get fullAddress() {
+ *     return `${this.street}, ${this.city}, ${this.props.state} ${this.props.zipCode}`
+ *   }
+ *
+ *   protected validate(props: AddressProps): void {
+ *     if (!props.street || !props.city || !props.state || !props.zipCode) {
+ *       throw new Error('Address fields are required')
+ *     }
+ *   }
+ * }
+ *
+ * // 3. 定义 Builder
  * class AddressBuilder extends ValueObjectBuilder<Address, AddressProps> {
  *   street(value: string): this {
  *     this.props.street = value
@@ -22,8 +53,18 @@ import type { ValueObject } from './ValueObject'
  *     return this
  *   }
  *
+ *   state(value: string): this {
+ *     this.props.state = value
+ *     return this
+ *   }
+ *
  *   zipCode(value: string): this {
  *     this.props.zipCode = value
+ *     return this
+ *   }
+ *
+ *   country(value: string): this {
+ *     this.props.country = value
  *     return this
  *   }
  *
@@ -31,7 +72,11 @@ import type { ValueObject } from './ValueObject'
  *     const errors: string[] = []
  *     if (!this.props.street) errors.push('Street is required')
  *     if (!this.props.city) errors.push('City is required')
+ *     if (!this.props.state) errors.push('State is required')
  *     if (!this.props.zipCode) errors.push('Zip code is required')
+ *     else if (!/^\d{5}$/.test(this.props.zipCode)) {
+ *       errors.push('Zip code must be 5 digits')
+ *     }
  *     return errors
  *   }
  *
@@ -40,12 +85,47 @@ import type { ValueObject } from './ValueObject'
  *   }
  * }
  *
- * // 使用
+ * // 4. 使用 Builder
  * const result = new AddressBuilder()
  *   .street('123 Main St')
  *   .city('New York')
+ *   .state('NY')
  *   .zipCode('10001')
+ *   .when(true, b => b.country('USA'))  // 条件设置
  *   .build()
+ *
+ * if (result.isSuccess) {
+ *   console.log(result.value.fullAddress)
+ * } else {
+ *   console.error(result.error) // ['Street is required', ...]
+ * }
+ * ```
+ *
+ * @example React 表单集成
+ * ```typescript
+ * function AddressForm() {
+ *   const [builder] = useState(() => new AddressBuilder())
+ *   const [errors, setErrors] = useState<string[]>([])
+ *
+ *   const handleSubmit = () => {
+ *     const result = builder.build()
+ *     if (result.isFailure) {
+ *       setErrors(result.error)
+ *       return
+ *     }
+ *     // 提交表单
+ *     submitAddress(result.value)
+ *   }
+ *
+ *   return (
+ *     <form>
+ *       <input onChange={e => builder.street(e.target.value)} />
+ *       <input onChange={e => builder.city(e.target.value)} />
+ *       {errors.map(err => <div>{err}</div>)}
+ *       <button onClick={handleSubmit}>Submit</button>
+ *     </form>
+ *   )
+ * }
  * ```
  */
 export abstract class ValueObjectBuilder<
@@ -267,9 +347,41 @@ export abstract class ValueObjectBuilder<
  * 通用的值对象 Builder
  *
  * 可以用于快速创建简单的 Builder，不需要定义具体的子类
+ * 适合临时使用或简单场景，复杂场景建议继承 ValueObjectBuilder
  *
  * @template T 值对象类型
  * @template Props 值对象属性类型
+ *
+ * @example
+ * ```typescript
+ * interface MoneyProps {
+ *   amount: number
+ *   currency: string
+ * }
+ *
+ * class Money extends ValueObject<MoneyProps> {
+ *   protected validate(props: MoneyProps): void {
+ *     if (props.amount < 0) throw new Error('Amount must be positive')
+ *     if (!props.currency) throw new Error('Currency is required')
+ *   }
+ * }
+ *
+ * // 使用通用 Builder
+ * const builder = GenericValueObjectBuilder.create(
+ *   (props: MoneyProps) => new Money(props),
+ *   (props) => {
+ *     const errors: string[] = []
+ *     if (!props.amount) errors.push('Amount is required')
+ *     if (!props.currency) errors.push('Currency is required')
+ *     return errors
+ *   }
+ * )
+ *
+ * const result = builder
+ *   .set('amount', 100)
+ *   .set('currency', 'USD')
+ *   .build()
+ * ```
  */
 export class GenericValueObjectBuilder<
   T extends ValueObject<Props>,

@@ -7,8 +7,15 @@ import { generateUUID } from '../../utils/uuid'
  * 1. 客户端ID永不改变 - 保证前端状态稳定
  * 2. 支持双业务ID - 满足数据库双主键设计需求
  * 3. 智能相等性判断 - 正确处理双ID比较
+ *
+ * 边界条件处理：
+ * - null/undefined ID 值会触发异常（setter 方法）
+ * - 业务ID只能设置一次（防止误操作）
+ * - 所有 getter 返回 undefined 而非 null（一致性）
+ *
+ * @template T - 业务ID类型，支持 string 或 number，默认为 number
  */
-export class EntityId<T extends string | number = string> {
+export class EntityId<T extends string | number = number> {
   /**
    * 客户端ID - UUID，创建时生成，永不改变
    */
@@ -39,18 +46,37 @@ export class EntityId<T extends string | number = string> {
   /**
    * 创建新的EntityId（生成UUID）
    */
-  static create<T extends string | number = string>(): EntityId<T> {
+  static create<T extends string | number = number>(): EntityId<T> {
     return new EntityId<T>()
   }
 
   /**
-   * 从已有数据恢复
+   * 从已有数据恢复 EntityId
+   *
+   * 用于反序列化场景（从数据库、LocalStorage、API 响应中恢复）
+   *
+   * @param data - 包含 ID 信息的对象
+   * @returns 恢复的 EntityId 实例
+   *
+   * @example 从后端响应恢复
+   * ```typescript
+   * const userData = await api.get('/user/123')
+   * const userId = EntityId.restore(userData)
+   * const user = new User(userData, userId)
+   * ```
+   *
+   * @example 兼容旧版本数据
+   * ```typescript
+   * // v1.x 数据格式
+   * const oldData = { clientId: 'uuid-123', businessId: 1 }
+   * const id = EntityId.restore(oldData) // 自动映射到 primaryBusinessId
+   * ```
    */
-  static restore<T extends string | number = string>(data: {
+  static restore<T extends string | number = number>(data: {
     clientId: string
     primaryBusinessId?: T
     secondaryBusinessId?: T
-    // 兼容旧版本
+    // @deprecated since v2.0.0 - Use primaryBusinessId instead
     businessId?: T
   }): EntityId<T> {
     const id = new EntityId<T>(data.clientId)
@@ -84,7 +110,10 @@ export class EntityId<T extends string | number = string> {
   }
 
   /**
-   * 获取业务ID（兼容旧版本）
+   * 获取业务ID
+   *
+   * @deprecated since v2.0.0 - Use getPrimaryBusinessId() instead
+   * @returns 主业务ID（可能为 undefined）
    */
   getBusinessId(): T | undefined {
     return this.primaryBusinessId
@@ -92,6 +121,19 @@ export class EntityId<T extends string | number = string> {
 
   /**
    * 设置主业务ID（只能设置一次）
+   *
+   * 通常在实体持久化后调用，保存后端返回的数据库主键
+   *
+   * @param id - 主业务ID
+   * @throws 当业务ID已设置时抛出异常（防止重复设置）
+   * @throws 当传入 null 或 undefined 时抛出异常
+   *
+   * @example 持久化后设置
+   * ```typescript
+   * const user = User.create({ email: 'test@example.com' })
+   * const savedData = await userRepository.save(user)
+   * user.getId().setPrimaryBusinessId(savedData.id) // 设置数据库主键
+   * ```
    */
   setPrimaryBusinessId(id: T): void {
     if (this.primaryBusinessId !== undefined) {
@@ -106,7 +148,12 @@ export class EntityId<T extends string | number = string> {
   }
 
   /**
-   * 设置业务ID（兼容旧版本，实际设置主业务ID）
+   * 设置业务ID
+   *
+   * @deprecated since v2.0.0 - Use setPrimaryBusinessId() instead
+   * @param id - 业务ID
+   * @throws 当业务ID已设置时抛出异常
+   * @throws 当传入 null 或 undefined 时抛出异常
    */
   setBusinessId(id: T): void {
     if (this.primaryBusinessId !== undefined) {
@@ -129,6 +176,19 @@ export class EntityId<T extends string | number = string> {
 
   /**
    * 设置次要业务ID（只能设置一次）
+   *
+   * 用于设置另一个业务维度的唯一标识符（如员工号、外部系统ID）
+   *
+   * @param id - 次要业务ID
+   * @throws 当次要业务ID已设置时抛出异常（防止重复设置）
+   * @throws 当传入 null 或 undefined 时抛出异常
+   *
+   * @example 员工系统集成
+   * ```typescript
+   * const user = User.create({ name: 'John' })
+   * user.getId().setPrimaryBusinessId(123)    // 数据库主键
+   * user.getId().setSecondaryBusinessId('E001') // 员工号
+   * ```
    */
   setSecondaryBusinessId(id: T): void {
     if (this.secondaryBusinessId !== undefined) {
@@ -150,7 +210,10 @@ export class EntityId<T extends string | number = string> {
   }
 
   /**
-   * 是否有业务ID（兼容旧版本）
+   * 是否有业务ID
+   *
+   * @deprecated since v2.0.0 - Use hasPrimaryBusinessId() instead
+   * @returns 如果有主业务ID返回 true，否则返回 false
    */
   hasBusinessId(): boolean {
     return this.hasPrimaryBusinessId()
@@ -178,19 +241,58 @@ export class EntityId<T extends string | number = string> {
   }
 
   /**
-   * 获取有效ID（优先主业务ID，次要业务ID，最后客户端ID）
+   * 获取有效ID（按优先级返回）
+   *
+   * 优先级：主业务ID > 次要业务ID > 客户端ID
+   *
+   * 用于需要唯一标识符但不关心具体来源的场景（如日志记录、Map key）
+   *
+   * @returns 有效的ID值
+   *
+   * @example
+   * ```typescript
+   * console.log(`Processing user: ${userId.getValue()}`)
+   * // 输出：Processing user: 123（如果有主业务ID）
+   * // 或：Processing user: uuid-xxx（如果没有业务ID）
+   * ```
    */
   getValue(): string | number {
     return this.primaryBusinessId ?? this.secondaryBusinessId ?? this.clientId
   }
 
   /**
-   * 判断相等性
-   * 规则：
-   * 1. 如果都有主业务ID，比较主业务ID
-   * 2. 如果都有次要业务ID，比较次要业务ID
-   * 3. 如果一个的主业务ID等于另一个的次要业务ID（交叉比较）
-   * 4. 否则比较客户端ID
+   * 判断两个 EntityId 是否相等
+   *
+   * 比较规则（优先级从高到低）：
+   * 1. 主业务ID相同 → 相等
+   * 2. 次要业务ID相同 → 相等
+   * 3. 交叉匹配（this.primary == other.secondary OR this.secondary == other.primary）→ 相等
+   * 4. 客户端ID相同 → 相等
+   *
+   * @param other - 要比较的 EntityId
+   * @returns 如果相等返回 true，否则返回 false
+   *
+   * @example 典型场景 - 数据同步
+   * ```typescript
+   * // 场景：数据库实体 vs HR 系统实体
+   * const dbEntity = EntityId.create()
+   * dbEntity.setPrimaryBusinessId(1)        // DB主键
+   * dbEntity.setSecondaryBusinessId('E001') // 员工号
+   *
+   * const hrEntity = EntityId.create()
+   * hrEntity.setPrimaryBusinessId('E001')   // HR系统主键是员工号
+   *
+   * dbEntity.equals(hrEntity) // true - 交叉匹配（规则3）
+   * ```
+   *
+   * @example 多系统集成
+   * ```typescript
+   * // 场景：同一用户在不同系统中的ID表示
+   * const systemA = EntityId.restore({ clientId: 'uuid-1', primaryBusinessId: 100, secondaryBusinessId: 'USR_A' })
+   * const systemB = EntityId.restore({ clientId: 'uuid-2', primaryBusinessId: 'USR_A', secondaryBusinessId: 100 })
+   *
+   * systemA.equals(systemB) // true - 交叉匹配
+   * ```
    */
   equals(other?: EntityId<string | number>): boolean {
     if (!other) return false
@@ -255,13 +357,28 @@ export class EntityId<T extends string | number = string> {
 
   /**
    * 序列化为JSON
+   *
+   * @returns 包含所有ID信息的对象
+   *
+   * @example
+   * ```typescript
+   * const id = EntityId.create<number>()
+   * id.setPrimaryBusinessId(123)
+   * const json = id.toJSON()
+   * // {
+   * //   clientId: 'uuid-xxx',
+   * //   primaryBusinessId: 123,
+   * //   businessId: 123,  // 兼容旧版本
+   * //   createdAt: 1234567890
+   * // }
+   * ```
    */
   toJSON(): {
     clientId: string
     primaryBusinessId?: T
     secondaryBusinessId?: T
     createdAt: number
-    // 兼容旧版本
+    // @deprecated since v2.0.0 - Use primaryBusinessId instead
     businessId?: T
   } {
     const json: {

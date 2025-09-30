@@ -13,9 +13,19 @@ import { Result } from '../shared/Result'
  * - 可替换性：可以用另一个值相同的对象替换
  * - 自我验证：创建时验证有效性
  *
+ * 不可变性实现：
+ * - 构造函数中使用 deepClone 避免外部修改影响
+ * - 使用 deepFreeze 冻结所有属性（包括嵌套对象）
+ * - props 标记为 readonly，防止直接赋值
+ *
+ * 边界条件处理：
+ * - null/undefined 属性值允许存在（由子类验证逻辑决定）
+ * - 空值对象通过 isEmpty() 判断（默认检查 null/undefined/空字符串）
+ * - 相等性判断包含类型检查（不同类型的值对象永不相等）
+ *
  * @template Props 值对象的属性类型，必须是 Record<string, any>
  *
- * @example
+ * @example 基本使用
  * ```typescript
  * interface EmailProps {
  *   value: string
@@ -52,8 +62,22 @@ export abstract class ValueObject<Props extends Record<string, any>> {
   /**
    * 构造函数
    *
-   * @param props 值对象的属性
-   * @throws 如果验证失败，抛出错误
+   * 执行流程：
+   * 1. 先验证属性（validate 方法由子类实现）
+   * 2. 深度克隆属性（避免外部修改影响）
+   * 3. 深度冻结属性（保证不可变性）
+   *
+   * @param props - 值对象的属性
+   * @throws 当验证失败时抛出错误（由子类的 validate 方法决定）
+   *
+   * @example
+   * ```typescript
+   * // ✅ 正确：通过静态工厂方法创建
+   * const email = Email.create('user@example.com')
+   *
+   * // ❌ 错误：不应直接使用 new（构造函数是 protected）
+   * const email = new Email({ value: 'user@example.com' })
+   * ```
    */
   protected constructor(props: Props) {
     // 先验证
@@ -122,13 +146,20 @@ export abstract class ValueObject<Props extends Record<string, any>> {
    * 返回一个新的值对象实例，其中包含部分修改的属性
    * 这是实现"修改"操作的推荐方式，保持不可变性
    *
-   * @param partial 要修改的部分属性
+   * 注意：
+   * - 会触发验证逻辑（可能抛出异常）
+   * - 使用浅合并（{ ...this.props, ...partial }）
+   * - 返回新实例，原对象不变
+   *
+   * @param partial - 要修改的部分属性
    * @returns 新的值对象实例
+   * @throws 当新属性组合验证失败时抛出错误
    *
    * @example
    * ```typescript
-   * const email = Email.create('user@example.com')
-   * const newEmail = email.with({ value: 'newuser@example.com' })
+   * const address = Address.create({ street: 'Main St', city: 'NY', zip: '10001' })
+   * const newAddress = address.with({ street: 'Second St' })
+   * // address 保持不变，newAddress 是新实例
    * ```
    */
   protected with(partial: Partial<Props>): this {
@@ -207,8 +238,24 @@ export abstract class ValueObject<Props extends Record<string, any>> {
   /**
    * 批量创建值对象
    *
-   * @param propsList 属性对象数组
+   * 如果任一项验证失败，返回失败 Result，包含所有错误信息
+   *
+   * @param propsList - 属性对象数组
    * @returns Result 包装的值对象数组
+   *
+   * @example
+   * ```typescript
+   * const emailsData = [
+   *   { value: 'user1@example.com' },
+   *   { value: 'invalid-email' },
+   *   { value: 'user2@example.com' }
+   * ]
+   *
+   * const result = Email.createMany(emailsData)
+   * if (result.isFailure) {
+   *   console.log(result.error) // "Item 1: Invalid email address"
+   * }
+   * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static createMany<T extends ValueObject<Record<string, any>>>(

@@ -96,14 +96,34 @@ function deepFreezeInternal<T>(obj: T, frozen: WeakSet<object>): Readonly<T> {
 /**
  * 深度冻结对象，使其完全不可变
  *
- * @param obj 要冻结的对象
- * @returns 冻结后的对象
+ * 实现细节：
+ * - 递归冻结所有嵌套对象和数组
+ * - 使用 WeakSet 避免循环引用导致的死循环
+ * - Date 和 RegExp 返回副本（避免冻结原型方法）
+ * - 已冻结对象直接返回（性能优化）
  *
- * @example
+ * 性能提示：
+ * - 适用于小型对象（< 1000 节点）
+ * - 大型对象建议使用 Immutable.js 等专业库
+ * - 会创建 Date/RegExp 的副本（额外内存开销）
+ *
+ * @param obj - 要冻结的对象
+ * @returns 冻结后的对象（完全不可变）
+ *
+ * @example 基本使用
  * ```typescript
- * const obj = { a: { b: 1 } }
+ * const obj = { a: { b: 1 }, items: [1, 2, 3] }
  * const frozen = deepFreeze(obj)
- * frozen.a.b = 2 // TypeError: Cannot assign to read only property
+ *
+ * frozen.a.b = 2       // ❌ TypeError: 严格模式下抛出错误
+ * frozen.items.push(4) // ❌ TypeError: 严格模式下抛出错误
+ * ```
+ *
+ * @example 循环引用处理
+ * ```typescript
+ * const obj: any = { name: 'test' }
+ * obj.self = obj // 循环引用
+ * const frozen = deepFreeze(obj) // ✅ 不会死循环
  * ```
  */
 export function deepFreeze<T>(obj: T): Readonly<T> {

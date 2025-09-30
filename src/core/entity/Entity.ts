@@ -89,6 +89,10 @@ export abstract class Entity<
 
   /**
    * 设置业务ID（通常在持久化后调用）
+   *
+   * @param businessId - 业务ID
+   * @throws 当业务ID已设置时抛出异常
+   * @throws 当传入 null 或 undefined 时抛出异常
    */
   setBusinessId(businessId: BizId): void {
     this.id.setBusinessId(businessId)
@@ -147,6 +151,18 @@ export abstract class Entity<
 
   /**
    * 过滤私有字段的内部辅助方法
+   *
+   * 实现细节：
+   * - 使用浅拷贝创建新对象（避免修改原始数据）
+   * - 通过 delete 操作符移除私有字段
+   * - 返回 Partial<Props> 因为可能移除了必填字段
+   *
+   * 性能考虑：
+   * - 当无私有字段时，仅执行一次浅拷贝
+   * - delete 操作是 O(n)，n 为私有字段数量
+   *
+   * @param data - 要过滤的数据
+   * @returns 过滤后的数据（移除私有字段）
    */
   private filterPrivateFields(data: Props): Partial<Props> {
     const privateFields = this.getPrivateFields?.() || []
@@ -187,23 +203,18 @@ export abstract class Entity<
    * user1.equals(null)   // false - 空值检查
    * ```
    */
-  equals(other?: Entity<unknown, string | number, never>): boolean {
+  equals(other?: Entity<Props, string | number, never>): boolean {
     // 1. 空值检查
     if (other == null) {
       return false
     }
 
-    // 2. 引用相等（性能优化）
-    if (this === other) {
-      return true
-    }
-
-    // 3. 类型检查：必须是 Entity 实例
+    // 2. 类型检查：必须是 Entity 实例
     if (!(other instanceof Entity)) {
       return false
     }
 
-    // 4. 构造函数检查：必须是同一个类
+    // 3. 构造函数检查：必须是同一个类
     // 确保 User 不会与 Order 相等，即使 ID 相同
     if (this.constructor !== other.constructor) {
       return false
