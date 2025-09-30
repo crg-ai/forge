@@ -27,19 +27,12 @@ export class EntityId<T extends string | number = string> {
   private secondaryBusinessId?: T
 
   /**
-   * 额外标识符 - 存储非唯一的业务相关ID
-   * 例如：订单号、发票号、追踪号等
-   */
-  private additionalIds: Map<string, string | number>
-
-  /**
    * 创建时间戳 - 用于调试和审计
    */
   private readonly createdAt: number
 
   private constructor(clientId?: string) {
     this.clientId = clientId ?? generateUUID()
-    this.additionalIds = new Map()
     this.createdAt = Date.now()
   }
 
@@ -59,8 +52,6 @@ export class EntityId<T extends string | number = string> {
     secondaryBusinessId?: T
     // 兼容旧版本
     businessId?: T
-    secondaryIds?: Record<string, string | number>
-    additionalIds?: Record<string, string | number>
   }): EntityId<T> {
     const id = new EntityId<T>(data.clientId)
 
@@ -73,14 +64,6 @@ export class EntityId<T extends string | number = string> {
 
     if (data.secondaryBusinessId !== undefined) {
       id.secondaryBusinessId = data.secondaryBusinessId
-    }
-
-    // 兼容旧版本的 secondaryIds
-    const additional = data.additionalIds || data.secondaryIds
-    if (additional) {
-      Object.entries(additional).forEach(([key, value]) => {
-        id.additionalIds.set(key, value)
-      })
     }
 
     return id
@@ -157,60 +140,6 @@ export class EntityId<T extends string | number = string> {
     }
 
     this.secondaryBusinessId = id
-  }
-
-  /**
-   * 添加额外标识符（非唯一标识）
-   */
-  addAdditionalId(key: string, value: string | number): void {
-    if (this.additionalIds.has(key)) {
-      throw new Error(`Additional ID '${key}' already exists`)
-    }
-
-    this.additionalIds.set(key, value)
-  }
-
-  /**
-   * 添加次要ID（兼容旧版本，实际添加额外标识符）
-   */
-  addSecondaryId(key: string, value: string | number): void {
-    if (this.additionalIds.has(key)) {
-      throw new Error(`Secondary ID '${key}' already exists`)
-    }
-
-    this.additionalIds.set(key, value)
-  }
-
-  /**
-   * 获取额外标识符
-   */
-  getAdditionalId(key: string): string | number | undefined {
-    return this.additionalIds.get(key)
-  }
-
-  /**
-   * 获取次要ID（兼容旧版本）
-   */
-  getSecondaryId(key: string): string | number | undefined {
-    return this.getAdditionalId(key)
-  }
-
-  /**
-   * 获取所有额外标识符
-   */
-  getAllAdditionalIds(): Record<string, string | number> {
-    const result: Record<string, string | number> = {}
-    this.additionalIds.forEach((value, key) => {
-      result[key] = value
-    })
-    return result
-  }
-
-  /**
-   * 获取所有次要ID（兼容旧版本）
-   */
-  getAllSecondaryIds(): Record<string, string | number> {
-    return this.getAllAdditionalIds()
   }
 
   /**
@@ -331,20 +260,16 @@ export class EntityId<T extends string | number = string> {
     clientId: string
     primaryBusinessId?: T
     secondaryBusinessId?: T
-    additionalIds?: Record<string, string | number>
     createdAt: number
     // 兼容旧版本
     businessId?: T
-    secondaryIds?: Record<string, string | number>
   } {
     const json: {
       clientId: string
       primaryBusinessId?: T
       secondaryBusinessId?: T
-      additionalIds?: Record<string, string | number>
       createdAt: number
       businessId?: T
-      secondaryIds?: Record<string, string | number>
     } = {
       clientId: this.clientId,
       createdAt: this.createdAt
@@ -357,11 +282,6 @@ export class EntityId<T extends string | number = string> {
 
     if (this.secondaryBusinessId !== undefined) {
       json.secondaryBusinessId = this.secondaryBusinessId
-    }
-
-    if (this.additionalIds.size > 0) {
-      json.additionalIds = this.getAllAdditionalIds()
-      json.secondaryIds = this.getAllAdditionalIds() // 兼容
     }
 
     return json

@@ -200,103 +200,41 @@ describe('EntityId 双业务ID支持', () => {
     })
   })
 
-  describe('额外标识符管理', () => {
-    it('应该支持添加额外的非唯一标识符', () => {
-      const id = EntityId.create<string>()
-
-      // 设置双业务ID
-      id.setPrimaryBusinessId('USER_123')
-      id.setSecondaryBusinessId('EMP001')
-
-      // 添加额外标识符（非唯一）
-      id.addAdditionalId('orderId', 'ORD-2024-001')
-      id.addAdditionalId('invoiceId', 'INV-2024-001')
-      id.addAdditionalId('trackingNumber', 'TRACK-123')
-
-      expect(id.getAdditionalId('orderId')).toBe('ORD-2024-001')
-      expect(id.getAdditionalId('invoiceId')).toBe('INV-2024-001')
-      expect(id.getAdditionalId('trackingNumber')).toBe('TRACK-123')
-      expect(id.getAdditionalId('unknown')).toBeUndefined()
-    })
-
-    it('应该不允许添加重复的额外标识符键', () => {
-      const id = EntityId.create<string>()
-      id.addAdditionalId('orderId', 'ORD-001')
-
-      expect(() => {
-        id.addAdditionalId('orderId', 'ORD-002')
-      }).toThrow("Additional ID 'orderId' already exists")
-    })
-
-    it('应该区分业务ID和额外标识符', () => {
-      const id = EntityId.create<string>()
-
-      // 业务ID用于唯一标识
-      id.setPrimaryBusinessId('USER_123')
-      id.setSecondaryBusinessId('EMP001')
-
-      // 额外标识符不用于相等性判断
-      id.addAdditionalId('departmentId', 'DEPT_001')
-
-      const id2 = EntityId.create<string>()
-      id2.setPrimaryBusinessId('USER_123')
-      id2.addAdditionalId('departmentId', 'DEPT_002') // 不同的部门
-
-      // 尽管额外标识符不同，但实体应该相等
-      expect(id.equals(id2)).toBe(true)
-    })
-  })
-
   describe('序列化和恢复', () => {
     it('应该正确序列化双业务ID', () => {
       const id = EntityId.create<string>()
       id.setPrimaryBusinessId('USER_123')
       id.setSecondaryBusinessId('EMP001')
-      id.addAdditionalId('orderId', 'ORD-001')
 
       const json = id.toJSON()
 
       expect(json.primaryBusinessId).toBe('USER_123')
       expect(json.secondaryBusinessId).toBe('EMP001')
-      expect(json.additionalIds).toEqual({ orderId: 'ORD-001' })
 
       // 兼容性
       expect(json.businessId).toBe('USER_123')
-      expect(json.secondaryIds).toEqual({ orderId: 'ORD-001' })
     })
 
     it('应该正确恢复双业务ID', () => {
       const restored = EntityId.restore<string>({
         clientId: 'test-uuid',
         primaryBusinessId: 'USER_123',
-        secondaryBusinessId: 'EMP001',
-        additionalIds: {
-          orderId: 'ORD-001',
-          invoiceId: 'INV-001'
-        }
+        secondaryBusinessId: 'EMP001'
       })
 
       expect(restored.getClientId()).toBe('test-uuid')
       expect(restored.getPrimaryBusinessId()).toBe('USER_123')
       expect(restored.getSecondaryBusinessId()).toBe('EMP001')
-      expect(restored.getAdditionalId('orderId')).toBe('ORD-001')
-      expect(restored.getAdditionalId('invoiceId')).toBe('INV-001')
     })
 
     it('应该兼容旧版本的数据格式', () => {
       const restored = EntityId.restore<number>({
         clientId: 'test-uuid',
-        businessId: 123, // 旧版本格式
-        secondaryIds: {
-          // 旧版本格式
-          orderId: 'ORD-001'
-        }
+        businessId: 123 // 旧版本格式
       })
 
       expect(restored.getPrimaryBusinessId()).toBe(123)
       expect(restored.getBusinessId()).toBe(123) // 兼容方法
-      expect(restored.getAdditionalId('orderId')).toBe('ORD-001')
-      expect(restored.getSecondaryId('orderId')).toBe('ORD-001') // 兼容方法
     })
   })
 
@@ -333,10 +271,6 @@ describe('EntityId 双业务ID支持', () => {
 
       // 入职后分配 employee_id
       person.setSecondaryBusinessId('EMP2024001')
-
-      // 其他相关ID
-      person.addAdditionalId('badgeId', 'BADGE_001')
-      person.addAdditionalId('emailId', 'john.doe@company.com')
 
       expect(person.isNew()).toBe(false)
       expect(person.getValue()).toBe('USER_20240101_001')

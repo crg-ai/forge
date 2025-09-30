@@ -17,19 +17,13 @@ describe('EntityId', () => {
     it('应该从已有数据恢复EntityId', () => {
       const data = {
         clientId: 'test-client-id',
-        businessId: 12345,
-        secondaryIds: {
-          orderId: 'ORD123',
-          trackingNumber: 'TRK456'
-        }
+        businessId: 12345
       }
 
       const id = EntityId.restore(data)
 
       expect(id.getClientId()).toBe('test-client-id')
       expect(id.getBusinessId()).toBe(12345)
-      expect(id.getSecondaryId('orderId')).toBe('ORD123')
-      expect(id.getSecondaryId('trackingNumber')).toBe('TRK456')
       expect(id.isNew()).toBe(false)
     })
 
@@ -83,52 +77,6 @@ describe('EntityId', () => {
 
       expect(stringId.getBusinessId()).toBe('BIZ-123')
       expect(stringId.hasBusinessId()).toBe(true)
-    })
-  })
-
-  describe('次要业务ID管理', () => {
-    let id: EntityId<number>
-
-    beforeEach(() => {
-      id = EntityId.create<number>()
-    })
-
-    it('应该添加次要业务ID', () => {
-      id.addSecondaryId('orderId', 'ORD123')
-      id.addSecondaryId('transactionId', 'TXN456')
-
-      expect(id.getSecondaryId('orderId')).toBe('ORD123')
-      expect(id.getSecondaryId('transactionId')).toBe('TXN456')
-    })
-
-    it('应该返回所有次要业务ID', () => {
-      id.addSecondaryId('orderId', 'ORD123')
-      id.addSecondaryId('transactionId', 'TXN456')
-      id.addSecondaryId('invoiceId', 789)
-
-      const allIds = id.getAllSecondaryIds()
-
-      expect(allIds).toEqual({
-        orderId: 'ORD123',
-        transactionId: 'TXN456',
-        invoiceId: 789
-      })
-    })
-
-    it('应该拒绝重复的次要业务ID键', () => {
-      id.addSecondaryId('orderId', 'ORD123')
-
-      expect(() => {
-        id.addSecondaryId('orderId', 'ORD456')
-      }).toThrow("Secondary ID 'orderId' already exists")
-    })
-
-    it('应该返回undefined对于不存在的次要业务ID', () => {
-      expect(id.getSecondaryId('nonexistent')).toBeUndefined()
-    })
-
-    it('应该返回空对象当没有次要业务ID时', () => {
-      expect(id.getAllSecondaryIds()).toEqual({})
     })
   })
 
@@ -217,7 +165,6 @@ describe('EntityId', () => {
 
       expect(json.clientId).toBe(clientId)
       expect(json.businessId).toBeUndefined()
-      expect(json.secondaryIds).toBeUndefined()
       expect(json.createdAt).toBe(createdAt)
     })
 
@@ -228,19 +175,6 @@ describe('EntityId', () => {
       const json = id.toJSON()
 
       expect(json.businessId).toBe(12345)
-    })
-
-    it('应该序列化包含次要业务ID的EntityId', () => {
-      const id = EntityId.create<number>()
-      id.addSecondaryId('orderId', 'ORD123')
-      id.addSecondaryId('trackingId', 'TRK456')
-
-      const json = id.toJSON()
-
-      expect(json.secondaryIds).toEqual({
-        orderId: 'ORD123',
-        trackingId: 'TRK456'
-      })
     })
 
     it('应该转换为字符串', () => {
@@ -257,13 +191,11 @@ describe('EntityId', () => {
     it('应该克隆EntityId', () => {
       const id = EntityId.create<number>()
       id.setBusinessId(12345)
-      id.addSecondaryId('orderId', 'ORD123')
 
       const cloned = id.clone()
 
       expect(cloned.getClientId()).toBe(id.getClientId())
       expect(cloned.getBusinessId()).toBe(id.getBusinessId())
-      expect(cloned.getSecondaryId('orderId')).toBe('ORD123')
       expect(cloned).not.toBe(id) // 不同的实例
     })
 
