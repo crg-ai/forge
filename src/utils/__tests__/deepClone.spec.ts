@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deepClone } from './deepClone'
+import { deepClone } from '../deepClone'
 
 describe('深度克隆工具', () => {
   describe('基本类型克隆', () => {

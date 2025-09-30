@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { Entity } from './Entity'
-import { EntityId } from './EntityId'
+import { Entity } from '../Entity'
+import { EntityId } from '../EntityId'
 
 // 测试用的具体实体实现
 interface UserProps {

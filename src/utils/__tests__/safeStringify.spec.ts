@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { safeStringify } from './safeStringify'
+import { safeStringify } from '../safeStringify'
 
 describe('安全字符串化', () => {
   describe('基本类型处理', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { ValueObjectBuilder, GenericValueObjectBuilder } from './ValueObjectBuilder'
-import { ValueObject } from './ValueObject'
+import { ValueObjectBuilder, GenericValueObjectBuilder } from '../ValueObjectBuilder'
+import { ValueObject } from '../ValueObject'
 
 // 测试用的值对象
 interface AddressProps {

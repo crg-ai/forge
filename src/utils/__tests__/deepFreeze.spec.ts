@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deepFreeze } from './deepFreeze'
+import { deepFreeze } from '../deepFreeze'
 
 describe('深度冻结', () => {
   describe('基本类型处理', () => {

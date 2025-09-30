@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { ValueObject } from './ValueObject'
-import { Result } from '../shared/Result'
+import { ValueObject } from '../ValueObject'
+import { Result } from '../../shared/Result'
 
 // 测试用的具体值对象实现
 interface EmailProps {
@@ -611,6 +611,22 @@ describe('值对象', () => {
       })
 
       expect(address1.equals(address2)).toBe(true)
+    })
+
+    it('should handle error without message in fromObject method', () => {
+      // 创建一个抛出没有 message 的错误的值对象
+      class ErrorWithoutMessage extends ValueObject<{ value: string }> {
+        protected validate(_props: { value: string }): void {
+          const error = new Error()
+          delete (error as any).message // 删除 message 属性
+          throw error
+        }
+      }
+
+      // 使用基类的 fromObject 方法
+      const result = ErrorWithoutMessage.fromObject({ value: 'test' })
+      expect(result.isFailure).toBe(true)
+      expect(result.error).toBe('Invalid value object properties')
     })
   })
 })

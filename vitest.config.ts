@@ -13,7 +13,7 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.config.*',
         '**/mockData',
-        'src/index.ts'
+        '**/index.ts'
       ],
       thresholds: {
         branches: 80,

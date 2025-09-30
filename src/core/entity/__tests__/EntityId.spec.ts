@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { EntityId } from './EntityId'
+import { EntityId } from '../EntityId'
 
 describe('EntityId', () => {
   describe('创建和初始化', () => {

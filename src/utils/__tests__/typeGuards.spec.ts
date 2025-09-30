@@ -10,7 +10,7 @@ import {
   isArray,
   isMap,
   isSet
-} from './typeGuards'
+} from '../typeGuards'
 
 describe('类型守卫函数', () => {
   describe('isPlainObject', () => {

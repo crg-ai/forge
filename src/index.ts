@@ -1,17 +1,23 @@
 /**
  * Forge - 轻量级前端DDD框架
+ *
+ * @packageDocumentation
  */
 
-// 核心模块导出
+/* ============================================
+   核心 DDD 构建块
+   ============================================ */
 export * from './core'
 
-// 工具函数导出
-export { generateUUID, isValidUUID } from './utils/uuid'
-export { deepFreeze } from './utils/deepFreeze'
-export { deepEquals } from './utils/deepEquals'
-export { deepClone } from './utils/deepClone'
-export { merge, pick, omit } from './utils/object'
+/* ============================================
+   工具函数
+   ============================================ */
+// 重新导出所有工具函数，方便直接从主包导入
 export {
+  // UUID
+  generateUUID,
+  isValidUUID,
+  // 类型守卫
   isPlainObject,
   isFunction,
   isString,
@@ -21,9 +27,20 @@ export {
   isDate,
   isArray,
   isMap,
-  isSet
-} from './utils/typeGuards'
-export { safeStringify } from './utils/safeStringify'
+  isSet,
+  // 深度操作
+  deepFreeze,
+  deepEquals,
+  deepClone,
+  // 对象操作
+  merge,
+  pick,
+  omit,
+  // 字符串化
+  safeStringify
+} from './utils'
 
-// 版本信息
+/* ============================================
+   版本信息
+   ============================================ */
 export const VERSION = '0.1.0'

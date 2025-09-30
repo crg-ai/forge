@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { Result, isOk, isFail, combineResults, sequence, parallel } from './Result'
+import { Result, isOk, isFail, combineResults, sequence, parallel } from '../Result'
 
 describe('结果类型', () => {
   describe('创建', () => {

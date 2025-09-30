@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { merge, pick, omit } from './object'
+import { merge, pick, omit } from '../object'
 
 describe('对象工具函数', () => {
   describe('merge 函数', () => {
@@ -914,6 +914,22 @@ describe('对象工具函数', () => {
       // Assert
       expect(endTime - startTime).toBeLessThan(50) // 应该在50ms内完成
       expect(Object.keys(result)).toHaveLength(500)
+    })
+
+    it('应该在合并时正确处理循环引用的对象', () => {
+      // 测试处理重复的源对象（触发行19-20的代码路径）
+      const source = { a: 1, b: { c: 2 } }
+
+      // 合并同一个对象多次
+      const result = merge(source, source)
+
+      // 验证合并成功
+      expect(result.a).toBe(1)
+      expect(result.b.c).toBe(2)
+
+      // 验证结果是新对象
+      expect(result).not.toBe(source)
+      expect(result.b).not.toBe(source.b)
     })
   })
 })

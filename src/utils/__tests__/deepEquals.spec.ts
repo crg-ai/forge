@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deepEquals } from './deepEquals'
+import { deepEquals } from '../deepEquals'
 
 describe('深度相等比较', () => {
   describe('基本类型比较', () => {
@@ -499,6 +499,23 @@ describe('深度相等比较', () => {
       }
 
       expect(deepEquals(obj1, obj2)).toBe(false)
+    })
+
+    it('应该检测对象键存在性不同的情况', () => {
+      // 测试键在一个对象中存在但在另一个对象中不存在的情况（行127-129）
+      const obj1 = { a: 1, b: 2, c: 3 }
+      const obj2 = { a: 1, b: 2, d: 3 } // 有 d 但没有 c
+
+      expect(deepEquals(obj1, obj2)).toBe(false)
+
+      // 测试相反的情况
+      expect(deepEquals(obj2, obj1)).toBe(false)
+
+      // 测试多个键不匹配
+      const obj3 = { a: 1, b: 2, c: 3, d: 4 }
+      const obj4 = { a: 1, b: 2, e: 3, f: 4 }
+
+      expect(deepEquals(obj3, obj4)).toBe(false)
     })
   })
 })

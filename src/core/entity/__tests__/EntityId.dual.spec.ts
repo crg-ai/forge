@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { EntityId } from './EntityId'
+import { EntityId } from '../EntityId'
 
 describe('EntityId 双业务ID支持', () => {
   describe('双业务ID管理', () => {
@@ -323,6 +323,87 @@ describe('EntityId 双业务ID支持', () => {
       // 应该识别为同一个人
       expect(person.equals(fromUserSystem)).toBe(true)
       expect(person.equals(fromHRSystem)).toBe(true)
+    })
+
+    it('应该识别主次ID相反的情况（系统合并场景）', () => {
+      // 系统A: DB_ID 为主，EMP_ID 为次
+      const systemA = EntityId.restore<string>({
+        clientId: 'uuid-a',
+        primaryBusinessId: 'DB_001',
+        secondaryBusinessId: 'EMP_001'
+      })
+
+      // 系统B: EMP_ID 为主，DB_ID 为次（主次ID相反）
+      const systemB = EntityId.restore<string>({
+        clientId: 'uuid-b',
+        primaryBusinessId: 'EMP_001',
+        secondaryBusinessId: 'DB_001'
+      })
+
+      // 应该识别为同一个实体（主次ID相反但值相同）
+      expect(systemA.equals(systemB)).toBe(true)
+      expect(systemB.equals(systemA)).toBe(true)
+    })
+
+    it('应该区分不同的主次ID相反的实体', () => {
+      // 实体1
+      const entity1 = EntityId.restore<string>({
+        clientId: 'uuid-1',
+        primaryBusinessId: 'A_001',
+        secondaryBusinessId: 'B_001'
+      })
+
+      // 实体2（不同的ID）
+      const entity2 = EntityId.restore<string>({
+        clientId: 'uuid-2',
+        primaryBusinessId: 'B_002', // 不同的值
+        secondaryBusinessId: 'A_002' // 不同的值
+      })
+
+      // 不应该相等
+      expect(entity1.equals(entity2)).toBe(false)
+      expect(entity2.equals(entity1)).toBe(false)
+    })
+
+    it('应该在主次ID部分匹配但不完全相反时正确判断', () => {
+      // 实体1: primary=A, secondary=B
+      const entity1 = EntityId.restore<string>({
+        clientId: 'uuid-1',
+        primaryBusinessId: 'A_001',
+        secondaryBusinessId: 'B_001'
+      })
+
+      // 实体2: primary=B_001 (匹配entity1的secondary), secondary=C_001 (不匹配entity1的primary)
+      const entity2 = EntityId.restore<string>({
+        clientId: 'uuid-2',
+        primaryBusinessId: 'B_001', // 匹配entity1的secondary
+        secondaryBusinessId: 'C_001' // 不匹配entity1的primary
+      })
+
+      // 应该相等（因为entity2的primary匹配entity1的secondary，这是交叉比较规则）
+      expect(entity1.equals(entity2)).toBe(true)
+      expect(entity2.equals(entity1)).toBe(true)
+
+      // 实体3: 完全不同的ID
+      const entity3 = EntityId.restore<string>({
+        clientId: 'uuid-3',
+        primaryBusinessId: 'X_001',
+        secondaryBusinessId: 'Y_001'
+      })
+
+      // 不应该相等（没有任何ID匹配）
+      expect(entity1.equals(entity3)).toBe(false)
+      expect(entity3.equals(entity1)).toBe(false)
+
+      // 测试308-309行的false分支：primaryBusinessId匹配但secondaryBusinessId不匹配
+      const entity4 = EntityId.restore<string>({
+        clientId: 'uuid-4',
+        primaryBusinessId: 'B_001', // 匹配entity1的secondary
+        secondaryBusinessId: 'A_002' // 不匹配entity1的primary (A_002 != A_001)
+      })
+
+      // 应该相等（因为entity4的primary匹配entity1的secondary）
+      expect(entity1.equals(entity4)).toBe(true)
     })
   })
 })

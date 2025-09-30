@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateUUID, isValidUUID } from './uuid'
+import { generateUUID, isValidUUID } from '../uuid'
 
 describe('UUID 工具', () => {
   describe('生成UUID', () => {
