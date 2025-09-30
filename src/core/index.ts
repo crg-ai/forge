@@ -7,3 +7,6 @@ export * from './shared'
 
 // 值对象
 export * from './value-object'
+
+// 实体
+export * from './entity'
