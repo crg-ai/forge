@@ -282,6 +282,8 @@ export class EntityId<T extends string | number = string> {
 
     // 3. 交叉比较：处理一个实体有主业务ID，另一个有次要业务ID的情况
     // 这种情况在数据同步或系统集成时可能出现
+    // 也包括主次ID相反的情况，例如：
+    // 系统A的(primary: DB_ID, secondary: EMP_ID) vs 系统B的(primary: EMP_ID, secondary: DB_ID)
     if (this.hasPrimaryBusinessId() && other.hasSecondaryBusinessId()) {
       // 检查是否是同一个实体（主ID等于另一个的次要ID）
       if (this.primaryBusinessId === other.getSecondaryBusinessId()) {
@@ -291,23 +293,6 @@ export class EntityId<T extends string | number = string> {
     if (this.hasSecondaryBusinessId() && other.hasPrimaryBusinessId()) {
       // 检查是否是同一个实体（次要ID等于另一个的主ID）
       if (this.secondaryBusinessId === other.getPrimaryBusinessId()) {
-        return true
-      }
-    }
-
-    // 3.5 处理主次ID相反的情况（实体合并场景）
-    // 例如：系统A的(primary: DB_ID, secondary: EMP_ID) vs 系统B的(primary: EMP_ID, secondary: DB_ID)
-    if (
-      this.hasPrimaryBusinessId() &&
-      this.hasSecondaryBusinessId() &&
-      other.hasPrimaryBusinessId() &&
-      other.hasSecondaryBusinessId()
-    ) {
-      // 检查是否是主次ID相反的情况
-      if (
-        this.primaryBusinessId === other.getSecondaryBusinessId() &&
-        this.secondaryBusinessId === other.getPrimaryBusinessId()
-      ) {
         return true
       }
     }

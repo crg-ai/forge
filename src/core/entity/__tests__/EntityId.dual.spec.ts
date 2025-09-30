@@ -53,6 +53,17 @@ describe('EntityId 双业务ID支持', () => {
       }).toThrow('Primary business ID has already been set')
     })
 
+    it('应该拒绝无效的主业务ID', () => {
+      const id = EntityId.create<string>()
+
+      expect(() => id.setPrimaryBusinessId(null as any)).toThrow(
+        'Primary business ID cannot be null or undefined'
+      )
+      expect(() => id.setPrimaryBusinessId(undefined as any)).toThrow(
+        'Primary business ID cannot be null or undefined'
+      )
+    })
+
     it('应该只允许设置一次次要业务ID', () => {
       const id = EntityId.create<string>()
       id.setSecondaryBusinessId('EMP001')
@@ -60,6 +71,17 @@ describe('EntityId 双业务ID支持', () => {
       expect(() => {
         id.setSecondaryBusinessId('EMP002')
       }).toThrow('Secondary business ID has already been set')
+    })
+
+    it('应该拒绝无效的次要业务ID', () => {
+      const id = EntityId.create<string>()
+
+      expect(() => id.setSecondaryBusinessId(null as any)).toThrow(
+        'Secondary business ID cannot be null or undefined'
+      )
+      expect(() => id.setSecondaryBusinessId(undefined as any)).toThrow(
+        'Secondary business ID cannot be null or undefined'
+      )
     })
 
     it('getValue应该按优先级返回ID', () => {
@@ -194,6 +216,16 @@ describe('EntityId 双业务ID支持', () => {
       expect(id.getAdditionalId('orderId')).toBe('ORD-2024-001')
       expect(id.getAdditionalId('invoiceId')).toBe('INV-2024-001')
       expect(id.getAdditionalId('trackingNumber')).toBe('TRACK-123')
+      expect(id.getAdditionalId('unknown')).toBeUndefined()
+    })
+
+    it('应该不允许添加重复的额外标识符键', () => {
+      const id = EntityId.create<string>()
+      id.addAdditionalId('orderId', 'ORD-001')
+
+      expect(() => {
+        id.addAdditionalId('orderId', 'ORD-002')
+      }).toThrow("Additional ID 'orderId' already exists")
     })
 
     it('应该区分业务ID和额外标识符', () => {
