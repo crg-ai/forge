@@ -80,6 +80,70 @@ describe('测试套件名称', () => {
 })
 ```
 
+### 中文描述规范
+
+从 Forge v1.0 开始，所有测试描述统一使用中文，以提高可读性和团队协作效率：
+
+```typescript
+// ✅ 推荐：使用中文描述
+describe('值对象', () => {
+  describe('创建和验证', () => {
+    it('应该使用有效属性创建值对象', () => {})
+    it('应该在属性无效时创建失败', () => {})
+    it('应该在创建期间规范化值', () => {})
+  })
+
+  describe('不可变性', () => {
+    it('应该深度冻结属性', () => {})
+    it('不应该修改原始属性对象', () => {})
+    it('克隆时应该返回相同实例', () => {})
+  })
+
+  describe('相等性', () => {
+    it('应该按值而不是引用进行比较', () => {})
+    it('对于不同值应该返回false', () => {})
+    it('对于null或undefined应该返回false', () => {})
+  })
+})
+
+// ✅ 实际示例：UUID工具测试
+describe('UUID 工具', () => {
+  describe('生成UUID', () => {
+    it('应该生成有效的 UUID v4', () => {})
+    it('应该生成唯一的 UUID', () => {})
+    it('应该具有正确的连字符格式', () => {})
+  })
+
+  describe('验证UUID', () => {
+    it('对于有效的 UUID 应该返回 true', () => {})
+    it('对于无效的 UUID 应该返回 false', () => {})
+  })
+})
+
+// ✅ 实际示例：结果类型测试
+describe('结果类型', () => {
+  describe('创建', () => {
+    it('应该创建成功的结果', () => {})
+    it('应该创建失败的结果', () => {})
+  })
+
+  describe('值访问', () => {
+    it('应该从成功的结果获取值', () => {})
+    it('从失败的结果获取值时应该抛出错误', () => {})
+  })
+
+  describe('映射', () => {
+    it('应该映射成功的值', () => {})
+    it('不应该映射失败的结果', () => {})
+  })
+
+  describe('链式调用', () => {
+    it('应该链式调用成功的结果', () => {})
+    it('应该在第一个失败时停止链式调用', () => {})
+  })
+})
+```
+
 ### 嵌套 Describe
 
 ```typescript
@@ -718,49 +782,65 @@ describe('OrderService', () => {
 
 ## 测试命名规范
 
-### 使用"should ... when ..."模式
+### 中文测试命名模式
+
+从 Forge v1.0 开始，推荐使用中文进行测试命名，使测试更加直观易懂：
 
 ```typescript
-// ✅ 好的示例：清晰的测试命名
-describe('User', () => {
-  it('should create user when data is valid', () => {})
-  it('should throw error when name is too short', () => {})
-  it('should throw error when email is invalid', () => {})
-  it('should update updatedAt when name changes', () => {})
-  it('should not change email when new email is same', () => {})
-  it('should return true when comparing users with same id', () => {})
+// ✅ 推荐：中文描述模式
+describe('用户', () => {
+  it('应该在数据有效时创建用户', () => {})
+  it('应该在名称太短时抛出错误', () => {})
+  it('应该在邮箱无效时抛出错误', () => {})
+  it('应该在名称改变时更新updatedAt', () => {})
+  it('当新邮箱相同时不应该改变邮箱', () => {})
+  it('比较具有相同id的用户时应该返回true', () => {})
 })
 
-// ✅ 也可以用"it ... given ..."模式
-describe('Money', () => {
-  it('adds two money objects given same currency', () => {})
-  it('throws error given different currencies', () => {})
-  it('throws error given negative amount', () => {})
+// ✅ 实际示例：值对象构建器
+describe('值对象构建器', () => {
+  describe('基础构建', () => {
+    it('应该使用流式 API 构建值对象', () => {})
+    it('缺少必填字段时应该失败', () => {})
+    it('应该验证字段格式', () => {})
+  })
+
+  describe('条件方法', () => {
+    it('应该根据条件使用when应用设置', () => {})
+  })
+
+  describe('管道和应用', () => {
+    it('应该使用pipe转换构建器', () => {})
+    it('应该应用多个设置器', () => {})
+  })
 })
 
-// ❌ 坏的示例：模糊的测试命名
+// ❌ 不推荐：混合语言或模糊描述
 describe('User', () => {
   it('test create', () => {}) // 测试什么？
-  it('name', () => {}) // 太简短
-  it('test 1', () => {}) // 完全不知道在测什么
-  it('should work', () => {}) // 太宽泛
-  it('check email validation', () => {}) // 不够具体
+  it('名称', () => {}) // 太简短
+  it('测试1', () => {}) // 完全不知道在测什么
+  it('应该工作', () => {}) // 太宽泛
+  it('check email validation', () => {}) // 混合语言
 })
 ```
 
 ### 测试命名的组成部分
 
-1. **应该做什么**（should do what）
-2. **在什么条件下**（when/given condition）
-3. **期望结果**（expected outcome）
+中文测试命名应包含以下要素：
+
+1. **动作**（应该/不应该）
+2. **预期行为**（做什么）
+3. **条件**（在什么情况下）
 
 ```typescript
-it('[should] [action] [when] [condition]', () => {})
+// 格式：[应该/不应该] [预期行为] [当/如果/在...时] [条件]
 
 // 示例
-it('should create user when data is valid', () => {})
-it('should throw error when email already exists', () => {})
-it('should return null when user not found', () => {})
+it('应该创建用户当数据有效时', () => {})
+it('应该抛出错误当邮箱已存在时', () => {})
+it('应该返回null当用户未找到时', () => {})
+it('不应该保存用户如果验证失败', () => {})
 ```
 
 ## 边界条件测试

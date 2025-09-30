@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { generateUUID, isValidUUID } from './uuid'
 
-describe('UUID Utils', () => {
-  describe('generateUUID', () => {
-    it('should generate a valid UUID v4', () => {
+describe('UUID 工具', () => {
+  describe('生成UUID', () => {
+    it('应该生成有效的 UUID v4', () => {
       const uuid = generateUUID()
       expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)
     })
 
-    it('should generate unique UUIDs', () => {
+    it('应该生成唯一的 UUID', () => {
       const uuid1 = generateUUID()
       const uuid2 = generateUUID()
       const uuid3 = generateUUID()
@@ -18,7 +18,7 @@ describe('UUID Utils', () => {
       expect(uuid1).not.toBe(uuid3)
     })
 
-    it('should have correct format with hyphens', () => {
+    it('应该具有正确的连字符格式', () => {
       const uuid = generateUUID()
       const parts = uuid.split('-')
 
@@ -31,8 +31,8 @@ describe('UUID Utils', () => {
     })
   })
 
-  describe('isValidUUID', () => {
-    it('should return true for valid UUID', () => {
+  describe('验证UUID', () => {
+    it('对于有效的 UUID 应该返回 true', () => {
       const validUUIDs = [
         'f47ac10b-58cc-4372-a567-0e02b2c3d479',
         'F47AC10B-58CC-4372-A567-0E02B2C3D479',
@@ -44,7 +44,7 @@ describe('UUID Utils', () => {
       })
     })
 
-    it('should return false for invalid UUID', () => {
+    it('对于无效的 UUID 应该返回 false', () => {
       const invalidUUIDs = [
         '123456',
         'not-a-uuid',
