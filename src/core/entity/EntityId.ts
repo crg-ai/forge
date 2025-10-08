@@ -1,19 +1,149 @@
 import { generateUUID } from '../../utils/uuid'
 
 /**
- * 实体ID - 支持客户端ID和双业务ID模式
+ * 实体标识符（Entity ID） - 支持客户端ID和双业务ID模式
  *
- * 设计原则：
- * 1. 客户端ID永不改变 - 保证前端状态稳定
- * 2. 支持双业务ID - 满足数据库双主键设计需求
- * 3. 智能相等性判断 - 正确处理双ID比较
+ * 实体标识符是 DDD 中实体身份的核心，本实现采用混合 ID 策略，同时支持客户端生成的临时 ID
+ * 和服务端分配的业务 ID，满足前端临时存储、乐观更新和多系统集成等复杂场景。
  *
- * 边界条件处理：
- * - null/undefined ID 值会触发异常（setter 方法）
- * - 业务ID只能设置一次（防止误操作）
- * - 所有 getter 返回 undefined 而非 null（一致性）
+ * ## 核心设计原则
+ *
+ * 1. **客户端ID优先** - 实体创建时立即生成 UUID，保证前端状态管理的稳定性
+ * 2. **双业务ID支持** - 支持主业务ID和次要业务ID，满足多系统集成需求
+ * 3. **智能相等性判断** - 自动处理不同ID维度的比较，支持交叉匹配
+ * 4. **不可变约束** - 业务ID只能设置一次，防止身份混乱
+ *
+ * ## ID类型说明
+ *
+ * - **客户端ID（Client ID）**: UUID格式，实体创建时自动生成，永不改变
+ *   - 用途：前端缓存键、临时引用、乐观更新
+ *   - 生命周期：从创建到销毁始终存在
+ *
+ * - **主业务ID（Primary Business ID）**: 数据库主键或主要业务标识符
+ *   - 用途：数据库查询、API调用、持久化引用
+ *   - 生命周期：持久化后设置，一旦设置不可修改
+ *
+ * - **次要业务ID（Secondary Business ID）**: 辅助业务标识符
+ *   - 用途：员工号、外部系统ID、遗留系统ID
+ *   - 生命周期：根据业务需要设置，一旦设置不可修改
+ *
+ * ## 使用场景
+ *
+ * ### 场景1: 前端乐观更新
+ * ```typescript
+ * // 1. 创建新实体（立即获得客户端ID）
+ * const user = User.create({ name: 'John', email: 'john@example.com' })
+ * const clientId = user.getClientId() // 'cli_7f8a9b0c...'
+ *
+ * // 2. 添加到前端状态（使用客户端ID作为键）
+ * store.set(clientId, user)
+ *
+ * // 3. 乐观更新UI
+ * ui.showUser(user)
+ *
+ * // 4. 异步持久化
+ * const response = await api.post('/users', user.toJSON())
+ * user.setBusinessId(response.id) // 设置服务端ID
+ *
+ * // 5. 客户端ID保持不变，UI无需重新渲染
+ * store.get(clientId) // 仍然有效
+ * ```
+ *
+ * ### 场景2: 多系统集成（双业务ID）
+ * ```typescript
+ * // 员工管理系统集成示例
+ * const employee = Employee.create({ name: 'Alice' })
+ *
+ * // 持久化到数据库，获得主键ID
+ * const dbRecord = await db.insert(employee)
+ * employee.getId().setPrimaryBusinessId(dbRecord.id) // 123
+ *
+ * // 同步到HR系统，获得员工号
+ * const hrRecord = await hrApi.sync(employee)
+ * employee.getId().setSecondaryBusinessId(hrRecord.employeeNo) // 'E001'
+ *
+ * // 现在可以通过任一ID查询
+ * repository.findByPrimaryId(123)   // 使用数据库ID
+ * repository.findBySecondaryId('E001') // 使用员工号
+ * ```
+ *
+ * ### 场景3: 数据同步和系统迁移
+ * ```typescript
+ * // 新系统实体
+ * const newEntity = EntityId.create<number>()
+ * newEntity.setPrimaryBusinessId(1001)        // 新系统主键
+ * newEntity.setSecondaryBusinessId('OLD_100') // 旧系统ID
+ *
+ * // 旧系统实体
+ * const oldEntity = EntityId.create<string>()
+ * oldEntity.setPrimaryBusinessId('OLD_100')   // 旧系统主键
+ *
+ * // 智能匹配：自动识别是同一实体
+ * newEntity.equals(oldEntity) // true（交叉匹配）
+ * ```
+ *
+ * ## 边界条件处理
+ *
+ * - ✅ 客户端ID自动生成，确保唯一性（UUID v4）
+ * - ✅ 业务ID只能设置一次，重复设置抛出异常
+ * - ✅ null/undefined ID值不被接受，设置时抛出异常
+ * - ✅ 所有 getter 返回 undefined（非 null），保持类型一致性
+ * - ✅ 序列化/反序列化保留完整ID信息
+ * - ✅ 向后兼容旧版本 businessId 字段
+ *
+ * ## 相等性判断规则
+ *
+ * 按优先级从高到低：
+ * 1. 主业务ID相同 → 相等
+ * 2. 次要业务ID相同 → 相等
+ * 3. 交叉匹配（一个的主ID等于另一个的次要ID）→ 相等
+ * 4. 客户端ID相同 → 相等
  *
  * @template T - 业务ID类型，支持 string 或 number，默认为 number
+ *
+ * @example 基本使用
+ * ```typescript
+ * // 创建新ID
+ * const id = EntityId.create<number>()
+ *
+ * // 查询ID信息
+ * id.getClientId()        // 'cli_7f8a9b0c...'
+ * id.getBusinessId()      // undefined（未持久化）
+ * id.isNew()              // true
+ *
+ * // 持久化后设置业务ID
+ * id.setBusinessId(1001)
+ * id.getBusinessId()      // 1001
+ * id.isNew()              // false
+ * ```
+ *
+ * @example 从数据恢复
+ * ```typescript
+ * // 从API响应恢复
+ * const userData = await api.get('/users/123')
+ * const userId = EntityId.restore({
+ *   clientId: userData.clientId,
+ *   primaryBusinessId: userData.id,
+ *   secondaryBusinessId: userData.employeeNo
+ * })
+ * ```
+ *
+ * @example 双业务ID场景
+ * ```typescript
+ * const id = EntityId.create<number>()
+ * id.setPrimaryBusinessId(123)      // 数据库主键
+ * id.setSecondaryBusinessId(9001)   // 外部系统ID
+ *
+ * id.hasPrimaryBusinessId()   // true
+ * id.hasSecondaryBusinessId() // true
+ * id.hasAnyBusinessId()       // true
+ * id.getValue()               // 123（优先返回主业务ID）
+ * ```
+ *
+ * @see {@link Entity} - 实体基类，使用 EntityId 作为标识符
+ * @see {@link AggregateRoot} - 聚合根，继承自 Entity
+ *
+ * @public
  */
 export class EntityId<T extends string | number = number> {
   /**
@@ -44,7 +174,33 @@ export class EntityId<T extends string | number = number> {
   }
 
   /**
-   * 创建新的EntityId（生成UUID）
+   * 创建新的实体标识符
+   *
+   * 自动生成客户端 ID（UUID），用于新创建的实体。
+   * 业务 ID 需要在实体持久化后手动设置。
+   *
+   * @template T - 业务ID类型，支持 string 或 number
+   * @returns 新的 EntityId 实例，包含自动生成的客户端ID
+   *
+   * @example 创建数字类型业务ID的实体标识
+   * ```typescript
+   * const userId = EntityId.create<number>()
+   * console.log(userId.getClientId())   // 'cli_7f8a9b0c1d2e3f4g...'
+   * console.log(userId.getBusinessId()) // undefined
+   * console.log(userId.isNew())         // true
+   * ```
+   *
+   * @example 创建字符串类型业务ID的实体标识
+   * ```typescript
+   * const orderId = EntityId.create<string>()
+   * orderId.setBusinessId('ORD-2024-001')
+   * console.log(orderId.getBusinessId()) // 'ORD-2024-001'
+   * ```
+   *
+   * @see {@link restore} - 从已有数据恢复 EntityId
+   * @see {@link setBusinessId} - 设置业务ID
+   *
+   * @public
    */
   static create<T extends string | number = number>(): EntityId<T> {
     return new EntityId<T>()
@@ -58,10 +214,26 @@ export class EntityId<T extends string | number = number> {
    * @param data - 包含 ID 信息的对象
    * @returns 恢复的 EntityId 实例
    *
-   * @example 从后端响应恢复
+   * @example 从后端响应恢复（简单场景）
    * ```typescript
+   * // 如果 API 返回的数据字段已经与 restore() 参数匹配
    * const userData = await api.get('/user/123')
+   * // userData = { clientId: 'uuid-xxx', primaryBusinessId: 123, ... }
    * const userId = EntityId.restore(userData)
+   * const user = new User(userData, userId)
+   * ```
+   *
+   * @example 从后端响应恢复（需要字段映射）
+   * ```typescript
+   * // 更真实的场景：API 返回的字段名与 restore() 参数不同
+   * const userData = await api.get('/user/123')
+   * // userData = { client_id: 'uuid-xxx', id: 123, employee_no: 'E001', ... }
+   *
+   * const userId = EntityId.restore({
+   *   clientId: userData.client_id,
+   *   primaryBusinessId: userData.id,
+   *   secondaryBusinessId: userData.employee_no
+   * })
    * const user = new User(userData, userId)
    * ```
    *

@@ -1,29 +1,162 @@
 /**
  * Result 模式实现 - 用于优雅地处理成功和失败情况
  *
- * 避免抛出异常，使用类型安全的方式处理错误
+ * Result 是一种函数式编程模式，用于显式处理操作的成功或失败，避免使用异常（try-catch）。
+ * 这种模式使错误处理更加明确、类型安全，且易于组合和测试。
  *
- * @template Value 成功时的值类型
- * @template Error 失败时的错误类型，默认为 string
+ * ## 核心优势
  *
- * @example
+ * 1. **类型安全** - 编译时明确知道操作可能失败，强制处理错误
+ * 2. **避免异常** - 不使用 try-catch，错误作为值传递
+ * 3. **易于组合** - 提供 map、chain 等函数式操作
+ * 4. **显式错误处理** - 代码中明确表达可能的失败情况
+ * 5. **可测试性** - 纯函数式设计，易于单元测试
+ *
+ * ## 何时使用 Result
+ *
+ * ✅ **推荐使用的场景：**
+ * - 数据验证（邮箱格式、业务规则检查）
+ * - 值对象创建（需要验证的不可变对象）
+ * - 领域服务操作（可能失败的业务逻辑）
+ * - 外部API调用（可能返回错误）
+ * - 文件/数据库操作（IO操作可能失败）
+ *
+ * ❌ **不推荐使用的场景：**
+ * - 明确的编程错误（空指针、类型错误等，应该抛异常）
+ * - 性能关键路径（Result 有轻微性能开销）
+ * - 不可恢复的错误（系统崩溃等）
+ *
+ * ## Result vs 异常
+ *
+ * | 特性 | Result 模式 | 异常（try-catch） |
+ * |------|------------|------------------|
+ * | 类型安全 | ✅ 编译时检查 | ❌ 运行时才知道 |
+ * | 控制流 | ✅ 显式处理 | ❌ 隐式跳转 |
+ * | 组合性 | ✅ 易于组合 | ❌ 难以组合 |
+ * | 性能 | ✅ 无栈展开 | ❌ 有性能开销 |
+ * | 可读性 | ✅ 错误即数据 | ⚠️  需要查看文档 |
+ *
+ * @template Value - 成功时的值类型
+ * @template Error - 失败时的错误类型，默认为 string
+ *
+ * @example 基本使用
  * ```typescript
- * // 基础使用
+ * // 创建 Result
  * const success = Result.ok(42)
  * const failure = Result.fail('Something went wrong')
  *
- * // 链式操作
+ * // 检查状态
+ * if (success.isSuccess) {
+ *   console.log(success.value) // 42
+ * }
+ *
+ * if (failure.isFailure) {
+ *   console.log(failure.error) // 'Something went wrong'
+ * }
+ * ```
+ *
+ * @example 值对象创建（典型DDD用例）
+ * ```typescript
+ * class Email extends ValueObject<{ value: string }> {
+ *   static create(email: string): Result<Email, string> {
+ *     if (!email || !email.includes('@')) {
+ *       return Result.fail('Invalid email address')
+ *     }
+ *     return Result.ok(new Email({ value: email }))
+ *   }
+ * }
+ *
+ * // 使用
+ * const emailResult = Email.create('user@example.com')
+ * if (emailResult.isSuccess) {
+ *   const email = emailResult.value
+ *   // 类型安全：确保 email 是有效的
+ * } else {
+ *   console.error(emailResult.error)
+ * }
+ * ```
+ *
+ * @example 链式操作（函数式组合）
+ * ```typescript
  * const result = Result.ok(5)
- *   .map(n => n * 2)
- *   .map(n => n + 1)
+ *   .map(n => n * 2)           // 10
+ *   .map(n => n + 1)           // 11
  *   .mapError(err => `Error: ${err}`)
  *
- * // 模式匹配
- * const value = result.match({
- *   ok: value => `Success: ${value}`,
- *   fail: error => `Failed: ${error}`
+ * console.log(result.value)    // 11
+ *
+ * // 失败时短路
+ * const failResult = Result.fail<number>('error')
+ *   .map(n => n * 2)           // 不执行
+ *   .map(n => n + 1)           // 不执行
+ *
+ * console.log(failResult.error) // 'error'
+ * ```
+ *
+ * @example 模式匹配
+ * ```typescript
+ * const result = Email.create('user@example.com')
+ *
+ * const message = result.match({
+ *   ok: email => `Valid email: ${email.value}`,
+ *   fail: error => `Validation failed: ${error}`
+ * })
+ *
+ * console.log(message)
+ * ```
+ *
+ * @example 异步操作
+ * ```typescript
+ * async function fetchUser(id: number): Promise<Result<User, string>> {
+ *   try {
+ *     const response = await api.get(`/users/${id}`)
+ *     return Result.ok(response.data)
+ *   } catch (error) {
+ *     return Result.fail('Failed to fetch user')
+ *   }
+ * }
+ *
+ * // 使用
+ * const userResult = await fetchUser(123)
+ * userResult.match({
+ *   ok: user => console.log('User:', user),
+ *   fail: error => console.error('Error:', error)
  * })
  * ```
+ *
+ * @example 组合多个 Result
+ * ```typescript
+ * const emailResult = Email.create('user@example.com')
+ * const nameResult = Name.create('John Doe')
+ * const ageResult = Age.create(25)
+ *
+ * const combined = Result.combine([emailResult, nameResult, ageResult])
+ *
+ * if (combined.isSuccess) {
+ *   const [email, name, age] = combined.value
+ *   const user = User.create({ email, name, age })
+ * } else {
+ *   console.error('Validation failed:', combined.error)
+ * }
+ * ```
+ *
+ * @example 从可能抛异常的函数创建 Result
+ * ```typescript
+ * const result = Result.fromThrowable(() => {
+ *   return JSON.parse(input) // 可能抛异常
+ * })
+ *
+ * result.match({
+ *   ok: data => console.log('Parsed:', data),
+ *   fail: error => console.error('Parse error:', error)
+ * })
+ * ```
+ *
+ * @see {@link isOk} - 类型守卫：检查是否为成功
+ * @see {@link isFail} - 类型守卫：检查是否为失败
+ * @see {@link combineResults} - 组合多个 Result
+ *
+ * @public
  */
 export class Result<Value, Error = string> {
   private constructor(
