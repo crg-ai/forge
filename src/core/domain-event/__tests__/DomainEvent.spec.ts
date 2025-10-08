@@ -138,10 +138,27 @@ describe('DomainEvent', () => {
         // Assert
         expect(json.eventId).toBe(event.eventId)
         expect(json.eventName).toBe('TestEvent')
+        expect(json.eventType).toBe('TestEvent')
         expect(json.aggregateId).toBe('test-id')
         expect(json.occurredOn).toBe(event.occurredOn.toISOString())
         expect(json.props.message).toBe('Test message')
         expect(json.props.value).toBe(42)
+      })
+
+      it('eventType应该是构造函数名称', () => {
+        // Arrange
+        const event = new TestEvent({
+          aggregateId: 'test-id',
+          message: 'Test',
+          value: 1
+        })
+
+        // Act
+        const json = event.toJSON()
+
+        // Assert
+        expect(json.eventType).toBe(event.constructor.name)
+        expect(json.eventType).toBe('TestEvent')
       })
     })
 

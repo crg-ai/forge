@@ -70,6 +70,18 @@ export interface DomainEvent<Props = unknown> {
    * 事件携带的业务数据
    */
   readonly props: Props
+
+  /**
+   * 序列化为 JSON 对象
+   */
+  toJSON(): {
+    eventId: string
+    eventName: string
+    eventType: string
+    occurredOn: string
+    aggregateId: string
+    props: Props
+  }
 }
 
 /**
@@ -124,10 +136,34 @@ export abstract class BaseDomainEvent<Props = unknown> implements DomainEvent<Pr
    * 序列化为 JSON 对象
    *
    * 用于事件存储、消息队列传输等场景
+   *
+   * @remarks
+   * **前端使用场景：**
+   * - IndexedDB 存储：`db.events.add(event.toJSON())`
+   * - WebSocket 传输：`ws.send(JSON.stringify(event.toJSON()))`
+   * - Redux DevTools：支持时间旅行调试
+   * - 状态持久化：LocalStorage/SessionStorage
+   *
+   * @returns 可序列化的 JSON 对象，包含事件类型信息用于反序列化
+   *
+   * @example
+   * ```typescript
+   * const event = new OrderSubmittedEvent({ aggregateId: 'order-1', total: 100 })
+   * const json = event.toJSON()
+   * // {
+   * //   eventId: 'uuid-xxx',
+   * //   eventName: 'OrderSubmitted',
+   * //   eventType: 'OrderSubmittedEvent',  // 用于反序列化
+   * //   occurredOn: '2025-10-08T12:00:00.000Z',
+   * //   aggregateId: 'order-1',
+   * //   props: { aggregateId: 'order-1', total: 100 }
+   * // }
+   * ```
    */
   toJSON(): {
     eventId: string
     eventName: string
+    eventType: string
     occurredOn: string
     aggregateId: string
     props: Props
@@ -135,6 +171,7 @@ export abstract class BaseDomainEvent<Props = unknown> implements DomainEvent<Pr
     return {
       eventId: this.eventId,
       eventName: this.eventName,
+      eventType: this.constructor.name,
       occurredOn: this.occurredOn.toISOString(),
       aggregateId: this.aggregateId,
       props: this.props

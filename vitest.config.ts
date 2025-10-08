@@ -24,6 +24,9 @@ export default defineConfig({
       }
     },
     include: ['src/**/*.{test,spec}.ts'],
-    exclude: ['node_modules', 'dist']
+    exclude: ['node_modules', 'dist'],
+    benchmark: {
+      include: ['src/**/*.bench.ts']
+    }
   }
 })
