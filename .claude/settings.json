@@ -1,0 +1,292 @@
+{
+  "$schema": "https://claude.ai/schemas/settings.json",
+  "description": "Forge DDD Framework - Claude Code 高级配置",
+
+  "permissions": {
+    "allow": [
+      "Bash(npm run test:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run format:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run size:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(git mv:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(xargs:*)"
+    ],
+    "deny": [],
+    "ask": ["Bash(npm publish:*)", "Bash(git push --force:*)", "Bash(rm -rf:*)"]
+  },
+
+  "hooks": {
+    "pre-file-edit": {
+      "enabled": true,
+      "description": "编辑文件前备份和验证",
+      "actions": [
+        {
+          "name": "backup-file",
+          "command": "cp ${file} ${file}.backup",
+          "continueOnError": true
+        }
+      ]
+    },
+
+    "post-file-edit": {
+      "enabled": true,
+      "description": "编辑后自动格式化",
+      "actions": [
+        {
+          "name": "format-typescript",
+          "pattern": "**/*.ts",
+          "command": "npx prettier --write ${file}",
+          "async": true
+        },
+        {
+          "name": "lint-typescript",
+          "pattern": "**/*.ts",
+          "command": "npx eslint --fix ${file}",
+          "async": true,
+          "continueOnError": true
+        }
+      ]
+    },
+
+    "post-file-create": {
+      "enabled": true,
+      "description": "创建文件后自动生成测试文件",
+      "actions": [
+        {
+          "name": "create-test-file",
+          "pattern": "src/**/*.ts",
+          "exclude": ["**/*.test.ts", "**/__tests__/**"],
+          "command": ".claude/commands/create-test-file.sh ${file}",
+          "continueOnError": true
+        }
+      ]
+    },
+
+    "pre-git-commit": {
+      "enabled": true,
+      "description": "提交前质量检查",
+      "actions": [
+        {
+          "name": "typecheck",
+          "command": "npm run typecheck"
+        },
+        {
+          "name": "lint",
+          "command": "npm run lint:all"
+        },
+        {
+          "name": "test",
+          "command": "npm run test:run"
+        }
+      ]
+    },
+
+    "post-git-commit": {
+      "enabled": true,
+      "description": "提交后更新文档",
+      "actions": [
+        {
+          "name": "update-changelog",
+          "command": "node .claude/scripts/update-changelog.js",
+          "async": true,
+          "continueOnError": true
+        }
+      ]
+    },
+
+    "pre-task-start": {
+      "enabled": true,
+      "description": "任务开始前准备",
+      "actions": [
+        {
+          "name": "save-session",
+          "command": ".claude/scripts/save-session.js start",
+          "continueOnError": true
+        },
+        {
+          "name": "check-branch",
+          "command": "git branch --show-current",
+          "continueOnError": true
+        }
+      ]
+    },
+
+    "post-task-complete": {
+      "enabled": true,
+      "description": "任务完成后处理",
+      "actions": [
+        {
+          "name": "save-session",
+          "command": ".claude/scripts/save-session.js complete",
+          "continueOnError": true
+        },
+        {
+          "name": "run-coverage",
+          "command": "npm run test:coverage",
+          "async": true,
+          "continueOnError": true
+        },
+        {
+          "name": "analyze-patterns",
+          "command": ".claude/scripts/analyze-patterns.js",
+          "async": true,
+          "continueOnError": true
+        }
+      ]
+    },
+
+    "pre-agent-invoke": {
+      "enabled": true,
+      "description": "调用 Agent 前记录上下文",
+      "actions": [
+        {
+          "name": "log-context",
+          "command": ".claude/scripts/log-agent-context.js ${agent} start",
+          "continueOnError": true
+        }
+      ]
+    },
+
+    "post-agent-invoke": {
+      "enabled": true,
+      "description": "Agent 完成后学习模式",
+      "actions": [
+        {
+          "name": "learn-patterns",
+          "command": ".claude/scripts/learn-from-agent.js ${agent}",
+          "async": true,
+          "continueOnError": true
+        }
+      ]
+    }
+  },
+
+  "workflows": {
+    "feature-development": {
+      "description": "完整的功能开发流程",
+      "steps": [
+        "create-branch",
+        "write-tests",
+        "implement-feature",
+        "run-validations",
+        "commit-changes",
+        "create-pr"
+      ]
+    },
+    "bug-fix": {
+      "description": "Bug 修复流程",
+      "steps": [
+        "reproduce-bug",
+        "write-failing-test",
+        "fix-implementation",
+        "verify-fix",
+        "commit-changes"
+      ]
+    },
+    "refactoring": {
+      "description": "重构流程",
+      "steps": [
+        "ensure-test-coverage",
+        "refactor-code",
+        "verify-tests-pass",
+        "check-performance",
+        "commit-changes"
+      ]
+    }
+  },
+
+  "memory": {
+    "enabled": true,
+    "path": ".forge/memory",
+    "retention": {
+      "shortTerm": "7d",
+      "longTerm": "90d",
+      "patterns": "permanent"
+    },
+    "categories": [
+      "common-patterns",
+      "project-preferences",
+      "error-solutions",
+      "optimization-techniques",
+      "architectural-decisions"
+    ]
+  },
+
+  "agents": {
+    "ddd-frontend-expert": {
+      "autoInvoke": ["domain-modeling", "aggregate-design", "value-object-creation"],
+      "priority": "high"
+    },
+    "code-reviewer": {
+      "autoInvoke": ["pre-commit", "pr-creation"],
+      "priority": "medium",
+      "config": {
+        "checkTypes": true,
+        "checkTests": true,
+        "checkDocs": false
+      }
+    },
+    "test-expert": {
+      "autoInvoke": ["test-creation", "coverage-improvement"],
+      "priority": "medium"
+    },
+    "doc-generator": {
+      "autoInvoke": false,
+      "priority": "low"
+    }
+  },
+
+  "preferences": {
+    "codeStyle": {
+      "indentation": "2spaces",
+      "quotes": "single",
+      "semicolons": true,
+      "trailingComma": "es5"
+    },
+    "testing": {
+      "framework": "vitest",
+      "coverageTarget": 100,
+      "requireTests": true
+    },
+    "naming": {
+      "files": "kebab-case",
+      "classes": "PascalCase",
+      "functions": "camelCase",
+      "constants": "SCREAMING_SNAKE_CASE"
+    }
+  },
+
+  "integrations": {
+    "github": {
+      "enabled": true,
+      "autoCreatePR": false,
+      "prTemplate": ".github/pull_request_template.md"
+    },
+    "vscode": {
+      "enabled": true,
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "vitest.explorer"]
+    }
+  },
+
+  "notifications": {
+    "onSuccess": {
+      "enabled": true,
+      "types": ["build", "test", "deploy"]
+    },
+    "onError": {
+      "enabled": true,
+      "types": ["build", "test", "lint"]
+    }
+  }
+}

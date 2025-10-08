@@ -1,0 +1,110 @@
+{
+  "$schema": "./config.schema.json",
+  "version": "1.0.0",
+  "project": {
+    "name": "forge",
+    "type": "library",
+    "framework": "ddd",
+    "language": "typescript"
+  },
+  "memory": {
+    "enabled": true,
+    "autoSave": true,
+    "retention": {
+      "shortTerm": "7d",
+      "longTerm": "90d",
+      "patterns": "permanent"
+    },
+    "categories": [
+      "common-patterns",
+      "project-preferences",
+      "error-solutions",
+      "optimization-techniques",
+      "architectural-decisions"
+    ]
+  },
+  "sessions": {
+    "enabled": true,
+    "autoSave": true,
+    "maxConcurrent": 5,
+    "retentionDays": 30
+  },
+  "agents": {
+    "ddd-frontend-expert": {
+      "enabled": true,
+      "autoInvoke": true,
+      "triggers": ["domain-modeling", "aggregate-design", "entity-creation"]
+    },
+    "code-reviewer": {
+      "enabled": true,
+      "autoInvoke": true,
+      "triggers": ["pre-commit", "pr-creation"]
+    },
+    "test-expert": {
+      "enabled": true,
+      "autoInvoke": false,
+      "triggers": ["test-creation", "coverage-improvement"]
+    },
+    "doc-generator": {
+      "enabled": true,
+      "autoInvoke": false,
+      "triggers": []
+    }
+  },
+  "workflows": {
+    "feature-development": {
+      "enabled": true,
+      "autoTracking": true
+    },
+    "bug-fix": {
+      "enabled": true,
+      "autoTracking": true
+    },
+    "refactoring": {
+      "enabled": true,
+      "autoTracking": true
+    }
+  },
+  "quality": {
+    "coverage": {
+      "target": 100,
+      "enforced": true
+    },
+    "typecheck": {
+      "strict": true,
+      "enforced": true
+    },
+    "linting": {
+      "enforced": true,
+      "autoFix": true
+    }
+  },
+  "performance": {
+    "bundleSize": {
+      "limit": "10kb",
+      "enforced": true
+    },
+    "benchmarks": {
+      "enabled": false
+    }
+  },
+  "integrations": {
+    "git": {
+      "enabled": true,
+      "hooks": true
+    },
+    "github": {
+      "enabled": true,
+      "autoCreatePR": false
+    },
+    "ci": {
+      "enabled": true,
+      "provider": "github-actions"
+    }
+  },
+  "learning": {
+    "enabled": true,
+    "patternRecognition": true,
+    "autoSuggest": true
+  }
+}

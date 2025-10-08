@@ -1,0 +1,281 @@
+{
+  "$schema": "https://claude.ai/schemas/workflow.json",
+  "name": "refactoring",
+  "description": "安全、系统化的代码重构工作流",
+  "version": "1.0.0",
+  "principles": [
+    "红灯不重构（测试必须通过）",
+    "小步快跑（一次只做一个改动）",
+    "持续验证（每次改动后都运行测试）"
+  ],
+  "steps": [
+    {
+      "id": "ensure-test-coverage",
+      "name": "确保测试覆盖率充足",
+      "type": "validation",
+      "description": "在重构前，必须有完善的测试保护网",
+      "required": true,
+      "substeps": [
+        {
+          "name": "检查当前覆盖率",
+          "command": "npm run test:coverage",
+          "validation": {
+            "minCoverage": 100
+          }
+        },
+        {
+          "name": "验证测试通过",
+          "command": "npm run test:run",
+          "validation": {
+            "allTestsPass": true
+          }
+        }
+      ],
+      "onFail": {
+        "message": "覆盖率不足，请先补充测试",
+        "action": "invoke-agent",
+        "agent": "test-expert"
+      }
+    },
+    {
+      "id": "create-refactor-branch",
+      "name": "创建重构分支",
+      "type": "git",
+      "command": "git checkout -b refactor/${description}",
+      "validation": {
+        "type": "branch-exists",
+        "pattern": "refactor/*"
+      }
+    },
+    {
+      "id": "identify-refactor-target",
+      "name": "识别重构目标",
+      "type": "analysis",
+      "description": "识别代码异味和重构机会",
+      "codeSmells": [
+        "重复代码",
+        "过长函数（> 30 行）",
+        "过大类（> 200 行）",
+        "过长参数列表（> 3 个）",
+        "发散式变化",
+        "霰弹式修改",
+        "依恋情结",
+        "数据泥团",
+        "基本类型偏执",
+        "过度使用 Switch"
+      ],
+      "tools": ["手动代码审查", "复杂度分析工具", "@code-reviewer Agent"]
+    },
+    {
+      "id": "choose-refactoring-technique",
+      "name": "选择重构手法",
+      "type": "planning",
+      "techniques": {
+        "extract-method": "提取方法",
+        "extract-class": "提取类",
+        "introduce-parameter-object": "引入参数对象",
+        "replace-conditional-with-polymorphism": "用多态替换条件",
+        "extract-interface": "提取接口",
+        "move-method": "搬移方法",
+        "rename": "重命名",
+        "inline": "内联"
+      },
+      "reference": ".claude/commands/workflow-refactor.md"
+    },
+    {
+      "id": "refactor-small-steps",
+      "name": "执行重构（小步前进）",
+      "type": "development",
+      "iterative": true,
+      "steps": [
+        "运行测试，确保全部通过 ✅",
+        "做一个小的改动",
+        "运行测试，确保仍然通过 ✅",
+        "提交改动（可选）",
+        "重复"
+      ],
+      "guidance": [
+        "每次只做一个小改动",
+        "改动后立即运行测试",
+        "可以频繁提交",
+        "保持代码始终可工作"
+      ],
+      "testCommand": "npm run test:run",
+      "quickTestCommand": "npm run test -- --run ${related-test}",
+      "commitTemplate": "refactor: ${small-change-description}"
+    },
+    {
+      "id": "continuous-validation",
+      "name": "持续验证",
+      "type": "validation",
+      "frequency": "after-each-change",
+      "quick": {
+        "command": "npm run test -- --run ${test-file}",
+        "description": "快速反馈（每次改动后）"
+      },
+      "full": {
+        "commands": ["npm run test:run", "npm run typecheck", "npm run lint", "npm run build"],
+        "description": "完整验证（重要节点）"
+      },
+      "performance": {
+        "commands": ["npm run size", "npm run analyze"],
+        "description": "性能检查（重构完成后）"
+      }
+    },
+    {
+      "id": "code-review",
+      "name": "代码审查",
+      "type": "review",
+      "agent": "code-reviewer",
+      "focus": [
+        "是否保持了原有行为",
+        "代码可读性是否提升",
+        "是否引入了新的问题",
+        "测试覆盖率是否保持",
+        "复杂度是否降低"
+      ]
+    },
+    {
+      "id": "performance-validation",
+      "name": "性能验证",
+      "type": "validation",
+      "description": "确保重构没有降低性能",
+      "optional": true,
+      "commands": [
+        {
+          "name": "运行性能测试",
+          "command": "npm run bench",
+          "if": "benchmarks-exist"
+        },
+        {
+          "name": "检查包体积",
+          "command": "npm run size",
+          "validation": {
+            "maxIncrease": "0kb"
+          }
+        },
+        {
+          "name": "对比重构前后",
+          "command": "git diff --stat main...HEAD"
+        }
+      ]
+    },
+    {
+      "id": "commit-refactor",
+      "name": "提交重构",
+      "type": "git",
+      "substeps": [
+        {
+          "name": "查看所有变更",
+          "command": "git diff main...HEAD"
+        },
+        {
+          "name": "整理提交历史（可选）",
+          "command": "git rebase -i main",
+          "optional": true
+        },
+        {
+          "name": "推送",
+          "command": "git push -u origin refactor/${description}"
+        },
+        {
+          "name": "创建 PR",
+          "command": "gh pr create --title 'refactor: ${title}' --body '${body}'",
+          "optional": true
+        }
+      ]
+    }
+  ],
+  "checklist": {
+    "preconditions": [
+      "测试覆盖率充足（100%）",
+      "所有测试通过",
+      "创建了重构分支",
+      "理解了要重构的代码"
+    ],
+    "process": [
+      "识别了代码异味",
+      "选择了合适的重构手法",
+      "小步前进，频繁测试",
+      "每次改动后测试都通过",
+      "保持了原有行为"
+    ],
+    "postconditions": [
+      "所有测试仍然通过",
+      "覆盖率保持不变",
+      "TypeScript 类型检查通过",
+      "ESLint 检查通过",
+      "包体积未增加",
+      "性能未下降",
+      "代码可读性提升"
+    ]
+  },
+  "commonPatterns": {
+    "extract-value-object": {
+      "when": "原始类型表示领域概念",
+      "before": "class User { email: string }",
+      "after": "class User { email: Email }"
+    },
+    "extract-domain-service": {
+      "when": "实体方法过于复杂",
+      "before": "class Order { calculateShipping() {...} }",
+      "after": "class ShippingCalculator { calculate(order: Order) {...} }"
+    },
+    "decompose-large-class": {
+      "when": "类超过 200 行或职责过多",
+      "technique": "按职责分解为多个类"
+    }
+  },
+  "hooks": {
+    "onStart": [
+      {
+        "action": "verify-green-tests",
+        "required": true
+      },
+      {
+        "action": "create-session",
+        "metadata": {
+          "type": "refactoring",
+          "target": "${refactor-target}"
+        }
+      }
+    ],
+    "onEachStep": [
+      {
+        "action": "run-tests",
+        "fast": true
+      },
+      {
+        "action": "update-progress",
+        "target": "session"
+      }
+    ],
+    "onComplete": [
+      {
+        "action": "save-refactoring-pattern",
+        "target": "memory/patterns/refactorings.md"
+      },
+      {
+        "action": "measure-improvement",
+        "metrics": ["complexity", "lines", "readability"]
+      }
+    ]
+  },
+  "tools": {
+    "vscode": ["F2: 重命名", "Ctrl+Shift+R: 提取方法", "Ctrl+Shift+F: 查找所有引用"],
+    "cli": [
+      "npx ts-prune: 查找未使用的导出",
+      "npx madge --circular src: 检测循环依赖",
+      "npx depcheck: 检查未使用的依赖"
+    ]
+  },
+  "antiPatterns": ["在重构中添加新功能", "跳过测试直接重构", "一次重构过多代码", "忽视性能影响"],
+  "bestPractices": [
+    "保持行为不变",
+    "小步前进",
+    "频繁测试",
+    "在安全点提交",
+    "性能意识",
+    "可读性优先"
+  ]
+}

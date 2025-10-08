@@ -1,0 +1,201 @@
+{
+  "$schema": "https://claude.ai/schemas/workflow.json",
+  "name": "bug-fix",
+  "description": "系统化的 Bug 修复工作流",
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "reproduce-bug",
+      "name": "重现 Bug",
+      "type": "analysis",
+      "description": "理解 Bug 并创建最小复现用例",
+      "tasks": [
+        "理解 Bug 的现象和影响",
+        "创建最小化复现用例",
+        "记录当前行为和期望行为",
+        "分析根本原因"
+      ],
+      "output": {
+        "reproduction-steps": "string",
+        "expected-behavior": "string",
+        "actual-behavior": "string",
+        "root-cause": "string"
+      }
+    },
+    {
+      "id": "create-bugfix-branch",
+      "name": "创建 Bug 修复分支",
+      "type": "git",
+      "command": "git checkout -b bugfix/${issue-number}-${brief-description}",
+      "validation": {
+        "type": "branch-exists",
+        "pattern": "bugfix/*"
+      }
+    },
+    {
+      "id": "write-failing-test",
+      "name": "编写失败的测试",
+      "type": "testing",
+      "agent": "test-expert",
+      "description": "先写一个能重现 Bug 的测试用例",
+      "validation": {
+        "type": "test-fails",
+        "expectation": "new-test-should-fail"
+      },
+      "guidance": [
+        "测试应该清晰展示 Bug 的行为",
+        "运行测试，确保它失败",
+        "失败原因应该与 Bug 描述一致"
+      ]
+    },
+    {
+      "id": "fix-implementation",
+      "name": "修复实现",
+      "type": "development",
+      "description": "实施最小化的修复",
+      "validation": {
+        "type": "test-passes",
+        "command": "npm run test:run"
+      },
+      "guidance": ["定位到问题代码", "实施最小化修复", "避免引入新问题", "遵循现有代码风格"]
+    },
+    {
+      "id": "verify-fix",
+      "name": "验证修复",
+      "type": "validation",
+      "parallel": true,
+      "substeps": [
+        {
+          "name": "失败的测试现在通过",
+          "command": "npm run test -- --run ${test-file}",
+          "required": true
+        },
+        {
+          "name": "所有测试仍然通过",
+          "command": "npm run test:run",
+          "required": true
+        },
+        {
+          "name": "测试覆盖率达标",
+          "command": "npm run test:coverage",
+          "validation": {
+            "coverage": 100
+          }
+        },
+        {
+          "name": "TypeScript 类型检查",
+          "command": "npm run typecheck",
+          "required": true
+        },
+        {
+          "name": "代码检查",
+          "command": "npm run lint:all",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "regression-testing",
+      "name": "回归测试",
+      "type": "testing",
+      "description": "确保修复没有引入新的 Bug",
+      "tasks": ["测试相关功能", "检查边界情况", "验证错误处理", "测试性能影响"]
+    },
+    {
+      "id": "add-defensive-tests",
+      "name": "添加防御性测试",
+      "type": "testing",
+      "agent": "test-expert",
+      "description": "为相关场景添加更多测试，防止将来再次出现",
+      "guidance": ["覆盖类似的边界情况", "测试相关的错误路径", "添加极端值测试"]
+    },
+    {
+      "id": "update-docs",
+      "name": "更新文档（如需要）",
+      "type": "documentation",
+      "optional": true,
+      "agent": "doc-generator",
+      "conditions": ["API 行为变更", "新的限制或要求", "特殊的边界情况"]
+    },
+    {
+      "id": "commit-fix",
+      "name": "提交修复",
+      "type": "git",
+      "substeps": [
+        {
+          "name": "查看变更",
+          "command": "git status && git diff"
+        },
+        {
+          "name": "暂存变更",
+          "command": "git add ."
+        },
+        {
+          "name": "提交修复",
+          "command": "git commit -m 'fix: ${fix-description}\n\n${detailed-explanation}\n\nFixes #${issue-number}\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>'",
+          "validation": {
+            "type": "conventional-commits",
+            "requiresIssueNumber": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "create-pr",
+      "name": "创建 Pull Request",
+      "type": "git",
+      "optional": true,
+      "command": "gh pr create --title 'fix: ${pr-title}' --body '${pr-body}'",
+      "prTemplate": {
+        "sections": ["Bug Description", "Root Cause", "Solution", "Test Plan", "Related Issue"]
+      }
+    }
+  ],
+  "checklist": [
+    "✅ 理解并能重现 Bug",
+    "✅ 创建了 bugfix 分支",
+    "✅ 编写了失败的测试",
+    "✅ 实施了最小化修复",
+    "✅ 测试现在通过",
+    "✅ 所有测试仍然通过",
+    "✅ 添加了防御性测试",
+    "✅ 类型检查通过",
+    "✅ 代码检查通过",
+    "✅ 覆盖率达标",
+    "✅ 更新了文档（如需要）",
+    "✅ 提交信息规范",
+    "✅ 创建了 PR（如需要）"
+  ],
+  "hooks": {
+    "onStart": [
+      {
+        "action": "create-session",
+        "metadata": {
+          "type": "bug-fix",
+          "issueNumber": "${issue-number}"
+        }
+      },
+      {
+        "action": "load-similar-fixes",
+        "fromMemory": "patterns/bug-fixes"
+      }
+    ],
+    "onComplete": [
+      {
+        "action": "save-bug-pattern",
+        "target": "memory/patterns/common-bugs.md"
+      },
+      {
+        "action": "update-metrics",
+        "metrics": ["bug-fix-time", "tests-added"]
+      }
+    ]
+  },
+  "antiPatterns": [
+    "修复症状而非根本原因",
+    "在修复中添加新功能",
+    "跳过测试直接修改",
+    "过度修改无关代码"
+  ],
+  "bestPractices": ["最小化修改范围", "测试优先", "完整的回归测试", "记录根本原因", "更新相关文档"]
+}

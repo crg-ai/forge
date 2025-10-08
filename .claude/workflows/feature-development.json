@@ -1,0 +1,246 @@
+{
+  "$schema": "https://claude.ai/schemas/workflow.json",
+  "name": "feature-development",
+  "description": "完整的功能开发工作流",
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "create-branch",
+      "name": "创建功能分支",
+      "type": "git",
+      "command": "git checkout -b feature/${feature-name}",
+      "optional": false,
+      "validation": {
+        "type": "branch-exists",
+        "pattern": "feature/*"
+      }
+    },
+    {
+      "id": "write-tests",
+      "name": "编写测试（TDD）",
+      "type": "development",
+      "description": "先编写测试用例，确保测试失败（Red）",
+      "agent": "test-expert",
+      "files": "**/*.test.ts",
+      "validation": {
+        "type": "test-exists",
+        "coverage": 100
+      },
+      "guidance": [
+        "参考 .claude/rules/testing.md",
+        "使用 AAA 模式（Arrange-Act-Assert）",
+        "测试边界情况和错误处理",
+        "确保测试失败后再继续"
+      ]
+    },
+    {
+      "id": "implement-feature",
+      "name": "实现功能",
+      "type": "development",
+      "description": "遵循 DDD 模式实现功能，确保测试通过（Green）",
+      "agent": "ddd-frontend-expert",
+      "validation": {
+        "type": "tests-pass",
+        "command": "npm run test:run"
+      },
+      "guidance": [
+        "参考 .claude/rules/ddd-patterns.md",
+        "遵循 .claude/rules/code-style.md",
+        "使用 TypeScript 最佳实践",
+        "保持函数简洁（< 30 行）",
+        "保持类职责单一（< 200 行）"
+      ]
+    },
+    {
+      "id": "refactor",
+      "name": "重构优化（可选）",
+      "type": "development",
+      "description": "优化代码结构和可读性（Refactor）",
+      "optional": true,
+      "validation": {
+        "type": "tests-still-pass",
+        "command": "npm run test:run"
+      },
+      "guidance": ["消除重复代码", "提高可读性", "优化性能（如需要）", "确保测试仍然通过"]
+    },
+    {
+      "id": "run-validations",
+      "name": "运行完整验证",
+      "type": "validation",
+      "parallel": true,
+      "substeps": [
+        {
+          "name": "TypeScript 类型检查",
+          "command": "npm run typecheck",
+          "required": true
+        },
+        {
+          "name": "代码检查",
+          "command": "npm run lint:all",
+          "required": true
+        },
+        {
+          "name": "运行测试",
+          "command": "npm run test:run",
+          "required": true
+        },
+        {
+          "name": "测试覆盖率",
+          "command": "npm run test:coverage",
+          "required": true,
+          "validation": {
+            "coverage": 100
+          }
+        },
+        {
+          "name": "构建项目",
+          "command": "npm run build",
+          "required": true
+        },
+        {
+          "name": "检查包大小",
+          "command": "npm run size",
+          "required": true,
+          "validation": {
+            "maxSize": "10kb"
+          }
+        }
+      ]
+    },
+    {
+      "id": "code-review",
+      "name": "代码审查",
+      "type": "review",
+      "agent": "code-reviewer",
+      "optional": false,
+      "checklist": [
+        "DDD 模式使用正确",
+        "类型安全",
+        "测试完整",
+        "代码可读性高",
+        "性能考虑",
+        "文档完整"
+      ]
+    },
+    {
+      "id": "commit-changes",
+      "name": "提交代码",
+      "type": "git",
+      "substeps": [
+        {
+          "name": "查看变更",
+          "command": "git status && git diff",
+          "interactive": true
+        },
+        {
+          "name": "暂存变更",
+          "command": "git add .",
+          "validation": {
+            "type": "has-changes"
+          }
+        },
+        {
+          "name": "规范化提交",
+          "command": "npm run commit",
+          "alternative": "git commit -m 'feat: ${commit-message}\n\n${detailed-description}\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>'",
+          "validation": {
+            "type": "conventional-commits"
+          }
+        }
+      ]
+    },
+    {
+      "id": "create-pr",
+      "name": "创建 Pull Request",
+      "type": "git",
+      "optional": true,
+      "substeps": [
+        {
+          "name": "推送到远程",
+          "command": "git push -u origin feature/${feature-name}"
+        },
+        {
+          "name": "创建 PR",
+          "command": "gh pr create --title 'feat: ${pr-title}' --body '${pr-body}'",
+          "template": ".github/pull_request_template.md"
+        }
+      ]
+    },
+    {
+      "id": "save-to-memory",
+      "name": "保存到记忆系统",
+      "type": "internal",
+      "action": "save-patterns",
+      "targets": ["short-term", "patterns"],
+      "data": {
+        "type": "feature-development",
+        "patterns": "extracted-from-session",
+        "decisions": "architectural-choices",
+        "learnings": "what-worked-well"
+      }
+    }
+  ],
+  "hooks": {
+    "onStart": [
+      {
+        "action": "create-session",
+        "saveContext": true
+      },
+      {
+        "action": "check-branch",
+        "ensureClean": true
+      }
+    ],
+    "onStepComplete": [
+      {
+        "action": "update-todo-list",
+        "markCompleted": true
+      },
+      {
+        "action": "save-progress",
+        "target": "session"
+      }
+    ],
+    "onComplete": [
+      {
+        "action": "generate-summary",
+        "includeMetrics": true
+      },
+      {
+        "action": "save-to-memory",
+        "categories": ["patterns", "best-practices"]
+      },
+      {
+        "action": "close-session",
+        "archive": true
+      }
+    ],
+    "onError": [
+      {
+        "action": "save-error-context",
+        "target": "memory/short-term"
+      },
+      {
+        "action": "suggest-solutions",
+        "fromMemory": true
+      }
+    ]
+  },
+  "agents": {
+    "primary": "ddd-frontend-expert",
+    "supporting": ["test-expert", "code-reviewer"]
+  },
+  "metrics": {
+    "track": ["duration", "steps-completed", "tests-written", "coverage-achieved", "lines-changed"]
+  },
+  "notifications": {
+    "onComplete": {
+      "type": "success",
+      "message": "功能开发完成！✨"
+    },
+    "onError": {
+      "type": "error",
+      "message": "工作流遇到错误，请检查详情"
+    }
+  }
+}

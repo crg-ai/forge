@@ -1,0 +1,19 @@
+# Sessions Directory
+
+This directory stores session data for complex tasks.
+
+## Structure
+
+```
+sessions/
+├── [session-id]/
+│   ├── context.json      # Session context
+│   ├── todos.json        # Task list
+│   ├── decisions.md      # Decisions made
+│   └── notes.md          # Session notes
+```
+
+## Usage
+
+Sessions are automatically created when starting complex workflows.
+Use `@session-manager` to manage sessions.

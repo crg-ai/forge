@@ -28,6 +28,13 @@ coverage/
 
 # Environment
 .env
+
+# Claude Code
+.claude/sessions/*/          # Session data (temporary)
+.forge/memory/short-term/    # Short-term memory (7 days)
+
+# Local settings (keep settings.json in git)
+.claude/settings.local.json
 .env.local
 .env.*.local
 
