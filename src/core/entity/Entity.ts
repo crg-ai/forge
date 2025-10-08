@@ -67,39 +67,172 @@ export abstract class Entity<
   }
 
   /**
-   * 获取ID对象
+   * 获取实体的唯一标识符对象
+   *
+   * 返回完整的 EntityId 对象，包含客户端 ID 和业务 ID
+   *
+   * @returns EntityId 对象，包含客户端 ID（必有）和业务 ID（可选）
+   *
+   * @example
+   * ```typescript
+   * const user = User.create({ email: 'test@example.com', name: 'John' })
+   * const id = user.getId()
+   *
+   * id.getClientId()    // 'cli_xxxxx' - 客户端生成的唯一标识
+   * id.getBusinessId()  // undefined - 新实体未持久化
+   *
+   * // 持久化后设置业务 ID
+   * user.setBusinessId(1001)
+   * id.getBusinessId()  // 1001
+   * ```
+   *
+   * @see {@link EntityId} - 实体标识符的实现细节
+   * @see {@link getClientId} - 获取客户端 ID
+   * @see {@link getBusinessId} - 获取业务 ID
    */
   getId(): EntityId<BizId> {
     return this.id
   }
 
   /**
-   * 获取客户端ID
+   * 获取客户端生成的唯一标识符
+   *
+   * 客户端 ID 在实体创建时自动生成，用于在未持久化前唯一标识实体
+   * 这对于客户端临时存储、乐观更新等场景非常有用
+   *
+   * @returns 客户端 ID 字符串，格式为 'cli_' 前缀 + UUID
+   *
+   * @example
+   * ```typescript
+   * const user = User.create({ email: 'test@example.com', name: 'John' })
+   *
+   * // 新实体立即拥有客户端 ID
+   * user.getClientId()  // 'cli_7f8a9b0c1d2e3f4g5h6i7j8k9l0m1n2o'
+   *
+   * // 可用于客户端缓存键
+   * cache.set(user.getClientId(), user)
+   *
+   * // 持久化后仍然保留客户端 ID
+   * user.setBusinessId(1001)
+   * user.getClientId()  // 仍然是 'cli_7f8a9b0c1d2e3f4g5h6i7j8k9l0m1n2o'
+   * ```
+   *
+   * @see {@link getId} - 获取完整 ID 对象
+   * @see {@link getBusinessId} - 获取业务 ID
+   * @see {@link isNew} - 检查是否为新实体
    */
   getClientId(): string {
     return this.id.getClientId()
   }
 
   /**
-   * 获取业务ID
+   * 获取服务端分配的业务标识符
+   *
+   * 业务 ID 由服务端（数据库）在持久化时生成，通常是自增 ID 或数据库主键
+   * 新创建的实体在持久化前业务 ID 为 undefined
+   *
+   * @returns 业务 ID（如果已持久化），否则返回 undefined
+   *
+   * @example
+   * ```typescript
+   * // 新实体没有业务 ID
+   * const user = User.create({ email: 'test@example.com', name: 'John' })
+   * user.getBusinessId()  // undefined
+   * user.isNew()          // true
+   *
+   * // 持久化后设置业务 ID
+   * const savedUser = await repository.save(user)
+   * savedUser.setBusinessId(1001)
+   * savedUser.getBusinessId()  // 1001
+   * savedUser.isNew()          // false
+   *
+   * // 用于构建 API URL
+   * if (!user.isNew()) {
+   *   const url = `/api/users/${user.getBusinessId()}`
+   * }
+   * ```
+   *
+   * @see {@link setBusinessId} - 设置业务 ID
+   * @see {@link isNew} - 检查是否为新实体
+   * @see {@link getClientId} - 获取客户端 ID
    */
   getBusinessId(): BizId | undefined {
     return this.id.getBusinessId()
   }
 
   /**
-   * 设置业务ID（通常在持久化后调用）
+   * 设置服务端分配的业务标识符
    *
-   * @param businessId - 业务ID
-   * @throws 当业务ID已设置时抛出异常
-   * @throws 当传入 null 或 undefined 时抛出异常
+   * 此方法通常在实体首次持久化后由仓储层调用，用于设置数据库生成的主键
+   * 业务 ID 一旦设置后不可修改，重复设置会抛出异常
+   *
+   * @param businessId - 服务端分配的业务 ID（数字或字符串）
+   * @throws {Error} 当业务 ID 已经设置时（防止重复设置）
+   * @throws {Error} 当传入 null 或 undefined 时
+   *
+   * @example
+   * ```typescript
+   * // 在 Repository 实现中调用
+   * class UserRepositoryImpl implements UserRepository {
+   *   async save(user: User): Promise<void> {
+   *     if (user.isNew()) {
+   *       // 插入数据库并获取自增 ID
+   *       const result = await db.insert('users', user.toJSON())
+   *       user.setBusinessId(result.insertId)  // 设置业务 ID
+   *     } else {
+   *       // 更新已存在的记录
+   *       await db.update('users', user.getBusinessId(), user.toJSON())
+   *     }
+   *   }
+   * }
+   *
+   * // 错误用法示例
+   * const user = User.create({ email: 'test@example.com' })
+   * user.setBusinessId(1001)
+   * user.setBusinessId(1002)  // ❌ 抛出异常：业务 ID 已设置
+   * ```
+   *
+   * @see {@link getBusinessId} - 获取业务 ID
+   * @see {@link isNew} - 检查是否为新实体
    */
   setBusinessId(businessId: BizId): void {
     this.id.setBusinessId(businessId)
   }
 
   /**
-   * 是否是新实体
+   * 判断实体是否为新创建的（未持久化）
+   *
+   * 通过检查业务 ID 是否存在来判断实体是否已持久化到数据库
+   * 这对于决定执行 INSERT 还是 UPDATE 操作非常有用
+   *
+   * @returns 如果业务 ID 未设置返回 true，已设置返回 false
+   *
+   * @example
+   * ```typescript
+   * // 新创建的实体
+   * const user = User.create({ email: 'test@example.com', name: 'John' })
+   * user.isNew()  // true - 尚未持久化
+   *
+   * // 持久化后
+   * user.setBusinessId(1001)
+   * user.isNew()  // false - 已持久化
+   *
+   * // 在仓储中使用
+   * async save(user: User): Promise<void> {
+   *   if (user.isNew()) {
+   *     await this.insert(user)  // 新实体，执行 INSERT
+   *   } else {
+   *     await this.update(user)  // 已存在，执行 UPDATE
+   *   }
+   * }
+   *
+   * // 在 UI 中使用
+   * const buttonText = user.isNew() ? '创建' : '更新'
+   * const apiMethod = user.isNew() ? 'POST' : 'PUT'
+   * ```
+   *
+   * @see {@link getBusinessId} - 获取业务 ID
+   * @see {@link setBusinessId} - 设置业务 ID
    */
   isNew(): boolean {
     return this.id.isNew()
@@ -130,20 +263,45 @@ export abstract class Entity<
   protected getPrivateFields?(): ReadonlyArray<keyof Props>
 
   /**
-   * 【辅助方法】更新 props（可选使用）
+   * 批量更新实体属性（辅助方法）
    *
-   * 提供一个便捷的方式来更新多个属性
+   * 提供一个便捷且类型安全的方式来更新多个属性，使用对象展开语法创建新的 props 对象
+   * 这在需要同时修改多个属性时比逐个赋值更简洁
    *
-   * @param updates - 要更新的属性（部分）
+   * @param updates - 要更新的属性（部分），支持任意 Props 的子集
    *
    * @example
    * ```typescript
-   * // 方式1：直接修改（简洁）
-   * this.props.email = email
+   * class User extends Entity<UserProps, number> {
+   *   // 方式1：直接修改单个属性（简洁明了）
+   *   changeEmail(email: string): void {
+   *     this.props.email = email
+   *   }
    *
-   * // 方式2：使用辅助方法（便捷）
-   * this.updateProps({ email, name })
+   *   // 方式2：使用 updateProps 批量更新（便捷）
+   *   updateProfile(name: string, email: string, age: number): void {
+   *     this.updateProps({ name, email, age })
+   *   }
+   *
+   *   // 方式3：部分更新（类型安全）
+   *   updateMetadata(updates: Partial<UserProps>): void {
+   *     this.updateProps(updates)  // TypeScript 会检查类型
+   *   }
+   * }
+   *
+   * // 使用示例
+   * const user = User.create({ name: 'John', email: 'john@example.com', age: 25 })
+   *
+   * // 批量更新
+   * user.updateProfile('Jane', 'jane@example.com', 26)
+   *
+   * // 部分更新
+   * user.updateMetadata({ age: 27 })
    * ```
+   *
+   * @remarks
+   * 注意：此方法使用浅拷贝（shallow copy），如果 Props 包含嵌套对象，
+   * 需要注意对象引用问题。建议嵌套对象使用值对象模式确保不可变性。
    */
   protected updateProps(updates: Partial<Props>): void {
     this.props = { ...this.props, ...updates }
@@ -152,17 +310,50 @@ export abstract class Entity<
   /**
    * 过滤私有字段的内部辅助方法
    *
-   * 实现细节：
+   * 在序列化（toJSON）时自动移除通过 getPrivateFields() 声明的私有字段
+   * 这是一个内部实现细节，子类通常不需要直接调用此方法
+   *
+   * @param data - 要过滤的实体属性对象
+   * @returns 移除私有字段后的对象（Partial 类型，因为可能移除了必填字段）
+   *
+   * @internal
+   *
+   * @remarks
+   * **实现细节：**
    * - 使用浅拷贝创建新对象（避免修改原始数据）
    * - 通过 delete 操作符移除私有字段
    * - 返回 Partial<Props> 因为可能移除了必填字段
    *
-   * 性能考虑：
-   * - 当无私有字段时，仅执行一次浅拷贝
-   * - delete 操作是 O(n)，n 为私有字段数量
+   * **性能考虑：**
+   * - 当无私有字段时：O(1)，仅执行一次浅拷贝
+   * - 当有私有字段时：O(n)，n 为私有字段数量
    *
-   * @param data - 要过滤的数据
-   * @returns 过滤后的数据（移除私有字段）
+   * **类型安全：**
+   * - 运行时通过 delete 确保私有字段被移除
+   * - 编译时通过 Omit<Props, PrivateKeys> 确保类型安全
+   *
+   * @example
+   * ```typescript
+   * // 内部调用流程
+   * interface UserProps {
+   *   email: string
+   *   name: string
+   *   passwordHash: string  // 私有字段
+   * }
+   *
+   * class User extends Entity<UserProps, number, 'passwordHash'> {
+   *   protected getPrivateFields() {
+   *     return ['passwordHash'] as const
+   *   }
+   *
+   *   toJSON() {
+   *     // 内部调用 filterPrivateFields
+   *     const publicProps = this.filterPrivateFields(this.props)
+   *     // publicProps 不包含 passwordHash
+   *     return { ...publicProps, clientId: this.getClientId() }
+   *   }
+   * }
+   * ```
    */
   private filterPrivateFields(data: Props): Partial<Props> {
     const privateFields = this.getPrivateFields?.() || []
@@ -225,17 +416,47 @@ export abstract class Entity<
   }
 
   /**
-   * 检查字段是否存在
+   * 检查字段是否存在且非空
    *
-   * @param field - 字段名
-   * @returns 如果字段值不为 undefined 和 null 则返回 true
+   * 用于检查实体属性是否已加载或设置，防止访问 undefined/null 字段
+   * 这在部分加载（partial loading）或懒加载（lazy loading）场景下特别有用
+   *
+   * @param field - 要检查的字段名（类型安全，必须是 Props 的键）
+   * @returns 如果字段值不为 undefined 和 null 则返回 true，否则返回 false
    *
    * @example
    * ```typescript
-   * if (this.hasField('email')) {
-   *   console.log('Email exists:', this.props.email)
+   * interface UserProps {
+   *   email: string
+   *   name: string
+   *   profile?: UserProfile  // 可选字段，可能未加载
    * }
+   *
+   * class User extends Entity<UserProps, number> {
+   *   // 安全访问可选字段
+   *   getProfileSummary(): string {
+   *     if (this.hasField('profile')) {
+   *       return this.props.profile.bio
+   *     }
+   *     return 'No profile information'
+   *   }
+   *
+   *   // 条件执行业务逻辑
+   *   sendWelcomeEmail(): void {
+   *     if (this.hasField('email')) {
+   *       emailService.send(this.props.email, 'Welcome!')
+   *     }
+   *   }
+   * }
+   *
+   * // 部分加载场景
+   * const user = await repository.findById(1, { fields: ['name'] })  // 只加载 name
+   * user.hasField('name')     // true
+   * user.hasField('profile')  // false - 未加载
    * ```
+   *
+   * @see {@link ensureField} - 确保字段存在，否则抛出异常
+   * @see {@link ensureFields} - 确保多个字段都存在
    */
   protected hasField<K extends keyof Props>(field: K): boolean {
     const value = this.props[field]
@@ -243,22 +464,56 @@ export abstract class Entity<
   }
 
   /**
-   * 确保字段存在，否则抛出错误
+   * 确保字段存在且非空，否则抛出异常
    *
-   * @param field - 字段名
-   * @param action - 操作描述（可选），用于生成友好的错误消息
-   * @returns 字段的非空值
-   * @throws 当字段不存在时抛出错误
+   * 用于在业务方法中强制要求某个字段必须存在，提供类型安全的非空断言
+   * 相比 hasField，此方法在字段缺失时直接抛出异常，适合必需字段的场景
+   *
+   * @param field - 要检查的字段名（类型安全，必须是 Props 的键）
+   * @param action - 操作描述（可选），用于生成更友好的错误消息
+   * @returns 字段的非空值（类型为 NonNullable<Props[K]>）
+   * @throws {Error} 当字段值为 undefined 或 null 时抛出异常
    *
    * @example
    * ```typescript
-   * // 基本用法
-   * const email = this.ensureField('email')
+   * interface OrderProps {
+   *   orderNo: string
+   *   amount?: number     // 可选字段
+   *   status?: string     // 可选字段
+   * }
    *
-   * // 带操作描述
-   * const email = this.ensureField('email', 'send notification')
-   * // 错误消息：Cannot send notification: field 'email' is not loaded
+   * class Order extends Entity<OrderProps, number> {
+   *   // 基本用法：确保字段存在
+   *   submit(): void {
+   *     const amount = this.ensureField('amount')
+   *     // TypeScript 知道 amount 是 number 类型（非 undefined）
+   *     console.log(amount.toFixed(2))  // ✅ 类型安全
+   *   }
+   *
+   *   // 带操作描述：提供更清晰的错误消息
+   *   processPayment(): void {
+   *     const amount = this.ensureField('amount', 'process payment')
+   *     const status = this.ensureField('status', 'process payment')
+   *     // 错误消息：Cannot process payment: field 'amount' is not loaded
+   *
+   *     paymentService.charge(amount)
+   *   }
+   *
+   *   // 多个字段检查（推荐使用 ensureFields）
+   *   ship(): void {
+   *     const orderNo = this.ensureField('orderNo', 'ship order')
+   *     const status = this.ensureField('status', 'ship order')
+   *     // 业务逻辑...
+   *   }
+   * }
+   *
+   * // 使用场景
+   * const order = await repository.findById(1, { fields: ['orderNo'] })
+   * order.processPayment()  // ❌ 抛出异常：Cannot process payment: field 'amount' is not loaded
    * ```
+   *
+   * @see {@link hasField} - 检查字段是否存在（不抛异常）
+   * @see {@link ensureFields} - 确保多个字段都存在
    */
   protected ensureField<K extends keyof Props>(field: K, action?: string): NonNullable<Props[K]> {
     const value = this.props[field]
@@ -276,27 +531,88 @@ export abstract class Entity<
   }
 
   /**
-   * 确保多个字段都存在，否则抛出错误
+   * 批量确保多个字段都存在且非空，否则抛出异常
    *
-   * @param fields - 字段名数组
-   * @param action - 操作描述（可选），用于生成友好的错误消息
-   * @throws 当任一字段不存在时抛出错误，错误消息会列出所有缺失的字段
+   * 用于在业务方法执行前验证多个必需字段，一次性检查所有缺失字段
+   * 相比多次调用 ensureField，此方法提供更好的错误提示（列出所有缺失字段）
+   *
+   * @param fields - 要检查的字段名数组（类型安全，必须是 Props 的键）
+   * @param action - 操作描述（可选），用于生成更友好的错误消息
+   * @throws {Error} 当任一字段不存在时抛出异常，错误消息会列出所有缺失的字段
    *
    * @example
    * ```typescript
-   * // 基本用法
-   * this.ensureFields(['email', 'name', 'phone'])
-   *
-   * // 带操作描述
-   * this.ensureFields(['orderNo', 'amount', 'status'], 'process payment')
-   * // 错误消息：Cannot process payment: missing fields [amount, status]
-   *
-   * // 在业务方法中使用
-   * pay(transactionId: string): void {
-   *   this.ensureFields(['orderNo', 'status', 'amount'], 'pay order')
-   *   // ... 业务逻辑
+   * interface OrderProps {
+   *   orderNo: string
+   *   amount?: number
+   *   status?: string
+   *   customerId?: string
    * }
+   *
+   * class Order extends Entity<OrderProps, number> {
+   *   // 基本用法：确保多个字段都存在
+   *   validate(): void {
+   *     this.ensureFields(['orderNo', 'amount', 'status'])
+   *     // 所有字段都必须存在，否则抛出异常
+   *   }
+   *
+   *   // 带操作描述：提供业务上下文
+   *   processPayment(): void {
+   *     this.ensureFields(['orderNo', 'amount', 'status'], 'process payment')
+   *     // 错误消息：Cannot process payment: missing fields [amount, status]
+   *
+   *     // 此处所有字段都已确保存在，可以安全使用
+   *     paymentService.charge(this.props.amount!)
+   *   }
+   *
+   *   // 复杂业务方法：验证多个前置条件
+   *   ship(trackingNo: string): void {
+   *     // 1. 确保必需字段都已加载
+   *     this.ensureFields(['orderNo', 'status', 'amount', 'customerId'], 'ship order')
+   *
+   *     // 2. 验证业务规则
+   *     if (this.props.status !== 'paid') {
+   *       throw new Error('只有已支付订单可以发货')
+   *     }
+   *
+   *     // 3. 执行业务逻辑
+   *     this.props.status = 'shipped'
+   *     this.props.trackingNo = trackingNo
+   *   }
+   * }
+   *
+   * // 使用场景1：部分加载导致字段缺失
+   * const order = await repository.findById(1, { fields: ['orderNo'] })
+   * order.processPayment()
+   * // ❌ 抛出异常：Cannot process payment: missing fields [amount, status]
+   *
+   * // 使用场景2：所有字段都存在
+   * const fullOrder = await repository.findById(1)
+   * fullOrder.processPayment()  // ✅ 成功执行
+   *
+   * // 对比单个字段检查
+   * // ❌ 不推荐：需要多次检查，错误消息不完整
+   * this.ensureField('amount', 'process payment')
+   * this.ensureField('status', 'process payment')
+   * this.ensureField('orderNo', 'process payment')
+   *
+   * // ✅ 推荐：一次性检查，错误消息完整
+   * this.ensureFields(['amount', 'status', 'orderNo'], 'process payment')
    * ```
+   *
+   * @remarks
+   * **优势：**
+   * - 一次性列出所有缺失字段，便于调试
+   * - 减少代码重复，提高可读性
+   * - 类型安全，编译时检查字段名
+   *
+   * **适用场景：**
+   * - 复杂业务方法需要多个字段
+   * - 部分加载（partial loading）场景
+   * - 懒加载（lazy loading）场景
+   *
+   * @see {@link ensureField} - 确保单个字段存在
+   * @see {@link hasField} - 检查字段是否存在（不抛异常）
    */
   protected ensureFields(fields: Array<keyof Props>, action?: string): void {
     const missingFields: string[] = []
